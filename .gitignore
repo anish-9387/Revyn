@@ -1,7 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
-.venv/
+venv/
 venv/
 .pytest_cache/
 .ruff_cache/
@@ -32,3 +32,6 @@ out/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Next.js generated type shim
+next-env.d.ts

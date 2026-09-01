@@ -10,6 +10,17 @@ interface Resource<T> {
   updatedAt: number | null;
 }
 
+interface State<T> {
+  data: T | null;
+  error: string | null;
+  loading: boolean;
+  updatedAt: number | null;
+}
+
+const INITIAL = { data: null, error: null, loading: true, updatedAt: null };
+
+const sameDeps = (a: unknown[], b: unknown[]) => a.length === b.length && a.every((v, i) => v === b[i]);
+
 /**
  * Fetches once and then polls. The dashboard tracks a live recovery loop, so stale data is
  * worse than an extra request; `intervalMs` of 0 disables polling.
@@ -19,43 +30,42 @@ export function useResource<T>(
   options: { intervalMs?: number; deps?: unknown[] } = {},
 ): Resource<T> {
   const { intervalMs = 0, deps = [] } = options;
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [state, setState] = useState<State<T>>(INITIAL);
+  const [lastDeps, setLastDeps] = useState(deps);
   const loaderRef = useRef(loader);
-  loaderRef.current = loader;
   const mounted = useRef(true);
 
-  const refresh = useCallback(async () => {
+  // Adjusted during render, not from an effect: new dependencies mean the data on screen belongs
+  // to a different question, so it is dropped rather than shown under the new one.
+  if (!sameDeps(lastDeps, deps)) {
+    setLastDeps(deps);
+    setState(INITIAL);
+  }
+
+  const load = useCallback(async () => {
     try {
       const next = await loaderRef.current();
-      if (!mounted.current) return;
-      setData(next);
-      setError(null);
-      setUpdatedAt(Date.now());
+      if (mounted.current) setState({ data: next, error: null, loading: false, updatedAt: Date.now() });
     } catch (cause) {
-      if (!mounted.current) return;
-      setError(cause instanceof Error ? cause.message : "Request failed");
-    } finally {
-      if (mounted.current) setLoading(false);
+      const message = cause instanceof Error ? cause.message : "Request failed";
+      if (mounted.current) setState((prev) => ({ ...prev, error: message, loading: false }));
     }
   }, []);
 
   useEffect(() => {
     mounted.current = true;
-    setLoading(true);
-    void refresh();
-    if (!intervalMs) return () => void (mounted.current = false);
-    const timer = setInterval(() => void refresh(), intervalMs);
+    loaderRef.current = loader;
+    void load();
+    const timer = intervalMs ? setInterval(() => void load(), intervalMs) : null;
     return () => {
       mounted.current = false;
-      clearInterval(timer);
+      if (timer) clearInterval(timer);
     };
+    // The caller declares what the loader closes over; `loader` itself is a fresh closure each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refresh, intervalMs, ...deps]);
+  }, [load, intervalMs, ...deps]);
 
-  return { data, error, loading, refresh, updatedAt };
+  return { ...state, refresh: load };
 }
 
 /** Tracks an async mutation so buttons can disable and surface failures. */
@@ -77,5 +87,7 @@ export function useAction() {
     }
   }, []);
 
-  return { pending, error, run, clearError: () => setError(null) };
+  const clearError = useCallback(() => setError(null), []);
+
+  return { pending, error, run, clearError };
 }

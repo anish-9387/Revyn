@@ -1,0 +1,13 @@
+venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+tests/
+*.db
+*.sqlite3
+app/ml/artifacts/*.joblib
+app/ml/artifacts/*.json
+data_out/

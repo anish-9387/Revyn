@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
 
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
@@ -25,12 +25,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const policy = useResource(api.policy, { intervalMs: 20000 });
   const { pending, error, run } = useAction();
 
-  const refresh = useMemo(
-    () => async () => {
-      await Promise.all([overview.refresh(), policy.refresh()]);
-    },
-    [overview.refresh, policy.refresh],
-  );
+  const { refresh: refreshOverview } = overview;
+  const { refresh: refreshPolicy } = policy;
+  const refresh = useCallback(async () => {
+    await Promise.all([refreshOverview(), refreshPolicy()]);
+  }, [refreshOverview, refreshPolicy]);
 
   const value = useMemo<Live>(
     () => ({ overview: overview.data, policy: policy.data, refresh }),

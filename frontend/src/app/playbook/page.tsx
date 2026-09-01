@@ -35,8 +35,7 @@ function channelRollup(entries: PlaybookEntry[]) {
 
 export default function Playbook() {
   const playbook = useResource(api.playbook, { intervalMs: 20000 });
-  const entries = playbook.data?.entries ?? [];
-  const channels = useMemo(() => channelRollup(entries), [entries]);
+  const channels = useMemo(() => channelRollup(playbook.data?.entries ?? []), [playbook.data]);
   const best = channels[0];
   const worst = channels[channels.length - 1];
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useLive } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui/Badge";
@@ -21,13 +21,14 @@ export default function Policies() {
   const policy = useResource(api.policy, { intervalMs: 20000 });
   const { pending, error, run, clearError } = useAction();
   const [draft, setDraft] = useState<Policy | null>(null);
+  const [baseVersion, setBaseVersion] = useState<number | null>(null);
 
-  // Server state wins on version bumps; local edits survive the polling in between.
-  useEffect(() => {
-    setDraft((current) =>
-      policy.data && (!current || current.version !== policy.data.version) ? policy.data : current,
-    );
-  }, [policy.data]);
+  // Adjusted during render, not in an effect: a version bump means the server won and local
+  // edits are stale. Polling between bumps leaves the draft alone.
+  if (policy.data && policy.data.version !== baseVersion) {
+    setBaseVersion(policy.data.version);
+    setDraft(policy.data);
+  }
 
   if (!draft) return policy.error ? <ErrorNote message={policy.error} onRetry={policy.refresh} /> : <Spinner />;
 

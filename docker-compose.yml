@@ -1,0 +1,71 @@
+name: revyn
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: revyn
+      POSTGRES_PASSWORD: revyn
+      POSTGRES_DB: revyn
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U revyn -d revyn"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      REVYN_ENV: production
+      REVYN_DATABASE_URL: postgresql+asyncpg://revyn:revyn@postgres:5432/revyn
+      REVYN_REDIS_URL: redis://redis:6379/0
+      REVYN_CORS_ORIGINS: http://localhost:3000
+      REVYN_SCHEDULER_ENABLED: "true"
+      REVYN_SCHEDULER_INTERVAL_SECONDS: "10"
+      REVYN_CLOCK_SPEEDUP: "120"
+      REVYN_GATEWAY: simulator
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      REVYN_LLM_ENABLED: ${REVYN_LLM_ENABLED:-true}
+    ports:
+      - "8000:8000"
+
+  seed:
+    build: ./backend
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      REVYN_DATABASE_URL: postgresql+asyncpg://revyn:revyn@postgres:5432/revyn
+      REVYN_SCHEDULER_ENABLED: "false"
+    command: ["python", "-m", "scripts.seed"]
+    restart: "no"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
