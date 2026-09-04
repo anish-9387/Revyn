@@ -117,12 +117,27 @@ async def safety_metrics(session: AsyncSession) -> dict:
     cancelled_count = int((await session.execute(cancelled)).scalar() or 0)
     executed_count = int((await session.execute(executed)).scalar() or 0)
     unique_count = int((await session.execute(distinct_keys)).scalar() or 0)
+    # NPCI metrics
+    npci_spent = int((await session.execute(select(func.coalesce(func.sum(RecoveryJourney.npci_attempts_used), 0)))).scalar() or 0)
+    futile = int((await session.execute(select(func.coalesce(func.sum(RecoveryJourney.futile_retries_prevented), 0)))).scalar() or 0)
+    mandates_total = 0
+    mandates_revoked = 0
+    try:
+        from app.models.mandate import Mandate
+        mandates_total = int((await session.execute(select(func.count(Mandate.id)))).scalar() or 0)
+        mandates_revoked = int((await session.execute(select(func.count(Mandate.id)).where(Mandate.status == "revoked"))).scalar() or 0)
+    except Exception:
+        pass
     return {
         "actions_executed": executed_count,
         "duplicate_executions": executed_count - unique_count,
         "policy_blocks": blocked_count,
         "rejected_actions": cancelled_count,
         "unauthorized_actions": 0,
+        "npci_attempts_spent": npci_spent,
+        "futile_retries_prevented": futile,
+        "mandates_tracked": mandates_total,
+        "mandates_revoked": mandates_revoked,
     }
 
 

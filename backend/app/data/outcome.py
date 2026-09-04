@@ -81,6 +81,9 @@ def organic_probability(inputs: OutcomeInputs) -> float:
         - 0.22 * math.log1p(amount_ratio)
         + 0.55 * SEGMENT_BIAS.get(inputs.segment, 0.0)
     )
+    # Regulatory causes almost never self-heal
+    if profile.layer.value == "regulatory" and inputs.cause.value not in ("execution_window_miss",):
+        logit -= 2.2
     return _sigmoid(logit)
 
 
@@ -109,6 +112,15 @@ def intervention_lift(inputs: OutcomeInputs, action: ActionType) -> float:
         logit -= 1.55
     if action is ActionType.RETRY_PAYMENT and not profile.retryable:
         logit -= 1.85
+    # Regulatory futility: retry never works
+    if profile.layer.value == "regulatory" and action is ActionType.RETRY_PAYMENT and inputs.cause.value != "execution_window_miss":
+        logit -= 4.5
+    if action is ActionType.REREGISTER_MANDATE and profile.layer.value == "regulatory":
+        logit += 0.6
+    if action is ActionType.AMEND_MANDATE_CAP and inputs.cause is RootCause.MANDATE_CAP_EXCEEDED:
+        logit += 0.8
+    if action is ActionType.SEND_PDN and inputs.cause is RootCause.PDN_MISSING:
+        logit += 0.9
     if action is ActionType.HUMAN_ESCALATION and inputs.amount_paise < 5_000_00:
         logit -= 0.45
     return _sigmoid(logit)

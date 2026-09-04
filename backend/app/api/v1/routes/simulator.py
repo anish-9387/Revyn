@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.deps import SessionDep
+from app.api.deps import ApiKeyDep, SessionDep
 from app.core.constants import Actor, AuditEvent
 from app.engines import simulator as simulator_engine
 from app.schemas.read import PolicyRead
@@ -28,7 +28,7 @@ async def what_if(session: SessionDep, payload: SimulationRequest) -> dict:
 
 
 @router.post("/apply", response_model=PolicyRead)
-async def apply_simulation(session: SessionDep, payload: SimulationRequest) -> PolicyRead:
+async def apply_simulation(session: SessionDep, payload: SimulationRequest, _auth: ApiKeyDep = None) -> PolicyRead:  # type: ignore[assignment]
     """Promote a simulated policy to the live one."""
     config = await get_active_policy(session)
     changes = payload.overrides.model_dump(exclude_none=True)

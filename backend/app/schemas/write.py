@@ -49,6 +49,11 @@ class PolicyUpdate(BaseModel):
     quiet_hours_enforced: bool | None = None
     degradation_retry_guard: bool | None = None
     max_discount_pct: float | None = Field(default=None, ge=0, le=60)
+    npci_max_attempts: int | None = Field(default=None, ge=1, le=10)
+    execution_window_guard: bool | None = None
+    pdn_lead_hours: float | None = Field(default=None, ge=0, le=72)
+    first_presentation_min_confidence: float | None = Field(default=None, ge=0, le=1)
+    afa_free_ceiling_paise: int | None = Field(default=None, ge=0)
 
 
 class SimulationRequest(BaseModel):

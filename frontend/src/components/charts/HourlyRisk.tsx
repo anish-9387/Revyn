@@ -22,7 +22,7 @@ export function HourlyRisk({ hourly }: { hourly: LeakageGraph["hourly"] }) {
       title="When revenue breaks (IST)"
       hint={
         peak
-          ? `Losses concentrate around ${peak.label} — ${inr(peak.amount * 100)} across ${compact(peak.events)} events.`
+          ? `Losses concentrate around ${peak.label} - ${inr(peak.amount * 100)} across ${compact(peak.events)} events.`
           : undefined
       }
       height={200}

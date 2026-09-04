@@ -232,6 +232,13 @@ def derive_insights(graph: dict) -> list[str]:
                 f"Gateway {routes[0]['key']} carries {share:.0%} of current exposure "
                 f"({format_inr(routes[0]['amount_paise'])})."
             )
+    # Regulatory insight: share that is futile to retry
+    regulatory_labels = {"No mandate on file", "Mandate revoked by customer", "Charge exceeds mandate cap", "Pre-debit notification not delivered", "Amount exceeds AFA-free ceiling", "Outside NPCI execution window"}
+    reg_amount = sum(c["amount_paise"] for c in graph["by_root_cause"] if c["label"] in regulatory_labels)
+    if reg_amount > 0:
+        share = reg_amount / total
+        if share >= 0.08:
+            insights.append(f"{share:.0%} ({format_inr(reg_amount)}) is regulatory - retrying is futile, only re-registration or cap amendment can recover it.")
     return insights[:5]
 
 

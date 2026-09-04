@@ -41,9 +41,9 @@ export function TopBar({
           </svg>
         </IconButton>
         <div className="flex min-w-0 items-center gap-4 sm:gap-7">
-          <Kpi label="At risk now" short="At risk" value={overview ? inr(overview.revenue_at_risk_paise) : "—"} />
+          <Kpi label="At risk now" short="At risk" value={overview ? inr(overview.revenue_at_risk_paise) : "-"} />
           <span aria-hidden className="hidden h-8 w-px bg-hairline sm:block" />
-          <Kpi label="Incremental net" short="Net back" value={overview ? inr(overview.incremental_net_paise) : "—"} tone="text-delta-up" />
+          <Kpi label="Incremental net" short="Net back" value={overview ? inr(overview.incremental_net_paise) : "-"} tone="text-delta-up" />
           <span className="hidden items-center gap-1.5 rounded-full bg-delta-up/10 px-2 py-1 text-[10px] font-semibold tracking-wide text-delta-up sm:inline-flex">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-delta-up" aria-hidden /> LIVE
           </span>

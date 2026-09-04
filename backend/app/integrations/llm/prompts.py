@@ -108,6 +108,16 @@ LEAKAGE_FORMAT = _schema(
     ["insights"],
 )
 
+PROMISE_SYSTEM_HINGLISH = PROMISE_SYSTEM + """
+Hinglish examples:
+- "paisa Monday tak aa jayega, thoda time do" -> promised true, date next Monday
+- "kal subah payment kar dunga" -> tomorrow
+- "parso tak clear ho jayega" -> day after tomorrow
+- "agle Monday tak kar dunga" -> next Monday
+- "salary aane ke baad karunga, 5 tarikh tak" -> 5th of next month or specified date
+Handle Hindi transliteration and code-mixed English.
+"""
+
 PROMISE_FORMAT = _schema(
     {
         "promised": {"type": "boolean"},
@@ -117,4 +127,21 @@ PROMISE_FORMAT = _schema(
         "quote": {"type": "string"},
     },
     ["promised", "promise_date", "amount_rupees", "confidence", "quote"],
+)
+
+HINGLISH_SYSTEM = """You are the outreach copywriter for Revyn, a revenue recovery platform for Indian merchants.
+
+Generate a recovery message in the customer's language register (Hinglish, Tamil-English, or formal B2B English) based on the root cause.
+
+Rules:
+- Use only the supplied amount, link, and name exactly. Never invent amounts, dates, discounts, or deadlines.
+- Keep within approved DLT template shape: greeting + amount + link + brief instruction.
+- Match the language hint: Hinglish = Hindi transliterated + English mix, friendly.
+- One message only, under 300 characters, no preamble.
+- Respect consent: if opted_out is true, return empty.
+"""
+
+HINGLISH_FORMAT = _schema(
+    {"body": {"type": "string"}},
+    ["body"],
 )

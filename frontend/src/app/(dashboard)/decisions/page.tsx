@@ -72,7 +72,7 @@ export default function Decisions() {
                     head: "Event",
                     cell: (row) => (
                       <span>
-                        <span className="text-ink">{row.event_ref ?? "—"}</span>
+                        <span className="text-ink">{row.event_ref ?? "-"}</span>
                         <span className="block text-[11px] text-muted">
                           {row.amount_paise === null ? "" : `${inr(row.amount_paise)} · `}
                           {actionLabel(row.chosen_action)}

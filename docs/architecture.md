@@ -35,7 +35,7 @@ Each has a factory that reads settings once. Swapping one never touches a caller
 
 ## The loop, concretely
 
-`Orchestrator.scan()` — detection and planning:
+`Orchestrator.scan()` - detection and planning:
 
 1. Load the active policy and run the degradation engine (route / method / issuer failure rates
    against their rolling baselines), then reconcile the windows.
@@ -44,7 +44,7 @@ Each has a factory that reads settings once. Swapping one never touches a caller
    and cause layer, Optimizer predicts recovery probability and counterfactual uplift for each
    candidate action, Strategist ranks by expected value, Policy Officer returns a verdict.
    The reasoning provider is consulted for at most `llm_max_events_per_scan` events per scan, and
-   its output is advisory — it can add a hypothesis, never choose the action.
+   its output is advisory - it can add a hypothesis, never choose the action.
 4. Persist the `Decision` with its full alternatives list, rationale, evidence and agent trace.
 5. Branch:
    - control cohort -> recorded, never acted on (this is what makes incrementality measurable);
@@ -52,15 +52,15 @@ Each has a factory that reads settings once. Swapping one never touches a caller
    - customer lock already held -> deferred as a collision, not double-contacted;
    - otherwise open a journey, transition `detected -> analyzing -> planned`, schedule step 0.
 
-`Orchestrator.tick()` — execution and verification. Due steps are executed by Executor (the only
+`Orchestrator.tick()` - execution and verification. Due steps are executed by Executor (the only
 component holding a gateway handle, always under an idempotency key), Verifier confirms the outcome
 *with the gateway* before anything is booked, Learner updates the merchant playbook, and the ledger
 books gross, organic and cost separately.
 
 ## Journey state machine
 
-13 states — `detected, analyzing, planned, awaiting_approval, approved, executing, verifying,
-recovered, closed, blocked, failed, paused, expired` — with `recovered / closed / blocked / failed /
+13 states - `detected, analyzing, planned, awaiting_approval, approved, executing, verifying,
+recovered, closed, blocked, failed, paused, expired` - with `recovered / closed / blocked / failed /
 expired` terminal. Transitions go through `services/journey.py`, which rejects illegal moves rather
 than silently allowing them, and each one is audited.
 
@@ -92,4 +92,4 @@ to the candidate builder. The decision engine will start scoring it with no furt
 without a session.
 
 **A new loss class:** extend `EventKind`, teach the generator to produce it, and add its organic
-cohort rate — the ledger and A/B split are already keyed by kind.
+cohort rate - the ledger and A/B split are already keyed by kind.

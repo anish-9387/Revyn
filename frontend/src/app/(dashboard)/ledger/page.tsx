@@ -84,7 +84,7 @@ export default function Ledger() {
             <Card>
               <CardHead
                 title="Which actions earned their keep"
-                hint="Incremental net per action, not raw recovery count — cheap nudges often beat expensive escalations."
+                hint="Incremental net per action, not raw recovery count - cheap nudges often beat expensive escalations."
               />
               <DataTable
                 rows={data.by_action}

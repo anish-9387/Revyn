@@ -6,7 +6,7 @@ from datetime import date
 
 from fastapi import APIRouter, HTTPException
 
-from app.api.deps import SessionDep
+from app.api.deps import ApiKeyDep, SessionDep
 from app.integrations.llm import get_reasoner
 from app.integrations.razorpay.factory import simulator
 from app.ml import train as trainer
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/ops", tags=["ops"])
 
 
 @router.post("/seed")
-async def seed(session: SessionDep, payload: SeedRequest) -> dict:
+async def seed(session: SessionDep, payload: SeedRequest, _auth: ApiKeyDep) -> dict:
     """Regenerate the synthetic merchant, refit the model and pre-score the live book."""
     return await seeding.seed(
         session,
@@ -32,17 +32,17 @@ async def seed(session: SessionDep, payload: SeedRequest) -> dict:
 
 
 @router.post("/scan")
-async def scan(session: SessionDep, limit: int = 40) -> dict:
+async def scan(session: SessionDep, limit: int = 40, _auth: ApiKeyDep = None) -> dict:  # type: ignore[assignment]
     return (await orchestrator.scan(session, limit=limit)).as_dict()
 
 
 @router.post("/tick")
-async def tick(session: SessionDep, limit: int | None = None) -> dict:
+async def tick(session: SessionDep, limit: int | None = None, _auth: ApiKeyDep = None) -> dict:  # type: ignore[assignment]
     return (await orchestrator.tick(session, limit=limit)).as_dict()
 
 
 @router.post("/cycle")
-async def cycle() -> dict:
+async def cycle(_auth: ApiKeyDep = None) -> dict:  # type: ignore[assignment]
     """One full detect-and-execute pass, the same work the scheduler does."""
     return await scheduler.run_once()
 
@@ -53,13 +53,13 @@ async def scheduler_status() -> dict:
 
 
 @router.post("/scheduler/start")
-async def scheduler_start() -> dict:
+async def scheduler_start(_auth: ApiKeyDep = None) -> dict:  # type: ignore[assignment]
     await scheduler.start()
     return scheduler.status()
 
 
 @router.post("/scheduler/stop")
-async def scheduler_stop() -> dict:
+async def scheduler_stop(_auth: ApiKeyDep = None) -> dict:  # type: ignore[assignment]
     await scheduler.stop()
     return scheduler.status()
 
@@ -70,12 +70,12 @@ async def model() -> dict:
 
 
 @router.post("/model/train")
-async def retrain(session: SessionDep) -> dict:
+async def retrain(session: SessionDep, _auth: ApiKeyDep = None) -> dict:  # type: ignore[assignment]
     return await trainer.train(session)
 
 
 @router.post("/inject-timeout")
-async def inject_timeout(payload: TimeoutInjectionRequest) -> dict:
+async def inject_timeout(payload: TimeoutInjectionRequest, _auth: ApiKeyDep = None) -> dict:  # type: ignore[assignment]
     """Arm the graceful-failure demo on the simulated gateway."""
     sim = simulator()
     if sim is None:

@@ -30,6 +30,10 @@ RESOLVE_DELAY_MINUTES: dict[ActionType, float] = {
     ActionType.DISCOUNT: 45.0,
     ActionType.PROMISE_FOLLOWUP: 120.0,
     ActionType.HUMAN_ESCALATION: 180.0,
+    ActionType.REREGISTER_MANDATE: 40.0,
+    ActionType.AMEND_MANDATE_CAP: 35.0,
+    ActionType.SEND_PDN: 20.0,
+    ActionType.SWITCH_RAIL: 30.0,
 }
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.deps import SessionDep
+from app.api.deps import ApiKeyDep, SessionDep
 from app.core.constants import Actor, AuditEvent
 from app.schemas.read import PolicyRead
 from app.schemas.write import KillSwitchRequest, PolicyUpdate
@@ -21,7 +21,7 @@ async def active(session: SessionDep) -> PolicyRead:
 
 
 @router.patch("/active", response_model=PolicyRead)
-async def update(session: SessionDep, payload: PolicyUpdate) -> PolicyRead:
+async def update(session: SessionDep, payload: PolicyUpdate, _auth: ApiKeyDep = None) -> PolicyRead:  # type: ignore[assignment]
     config = await get_active_policy(session)
     changes = payload.model_dump(exclude_none=True)
     for field, value in changes.items():
@@ -43,6 +43,6 @@ async def update(session: SessionDep, payload: PolicyUpdate) -> PolicyRead:
 
 
 @router.post("/kill-switch")
-async def kill_switch(session: SessionDep, payload: KillSwitchRequest) -> dict:
+async def kill_switch(session: SessionDep, payload: KillSwitchRequest, _auth: ApiKeyDep = None) -> dict:  # type: ignore[assignment]
     """Halts or resumes all recovery automation immediately."""
     return await orchestrator.set_kill_switch(session, enabled=payload.enabled, actor=payload.actor)

@@ -53,4 +53,10 @@ class PolicyConfig(Base, TimestampMixin):
     degradation_retry_guard: Mapped[bool] = mapped_column(Boolean, default=True)
     max_discount_pct: Mapped[float] = mapped_column(Float, default=15.0)
 
+    npci_max_attempts: Mapped[int] = mapped_column(Integer, default=4)
+    execution_window_guard: Mapped[bool] = mapped_column(Boolean, default=True)
+    pdn_lead_hours: Mapped[float] = mapped_column(Float, default=24.0)
+    first_presentation_min_confidence: Mapped[float] = mapped_column(Float, default=0.55)
+    afa_free_ceiling_paise: Mapped[int] = mapped_column(Integer, default=15_000_00)
+
     notes: Mapped[dict[str, Any]] = mapped_column(default=dict)

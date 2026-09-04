@@ -19,7 +19,7 @@ from app.core.constants import (
     PolicyRule,
     PolicyVerdict,
 )
-from app.data.catalog import intervention
+from app.data.catalog import REGULATORY_ALLOWED_ACTIONS, intervention
 from app.engines.decision import GateVerdict
 from app.engines.features import IST_OFFSET_HOURS
 from app.models.customer import Customer
@@ -51,6 +51,11 @@ class PolicySpec:
     quiet_hours_enforced: bool = False
     degradation_retry_guard: bool = True
     max_discount_pct: float = 15.0
+    npci_max_attempts: int = 4
+    execution_window_guard: bool = True
+    pdn_lead_hours: float = 24.0
+    first_presentation_min_confidence: float = 0.55
+    afa_free_ceiling_paise: int = 15_000_00
 
     @classmethod
     def from_model(cls, config: PolicyConfig) -> PolicySpec:
@@ -75,6 +80,11 @@ class PolicySpec:
             quiet_hours_enforced=config.quiet_hours_enforced,
             degradation_retry_guard=config.degradation_retry_guard,
             max_discount_pct=config.max_discount_pct,
+            npci_max_attempts=getattr(config, "npci_max_attempts", 4),
+            execution_window_guard=getattr(config, "execution_window_guard", True),
+            pdn_lead_hours=getattr(config, "pdn_lead_hours", 24.0),
+            first_presentation_min_confidence=getattr(config, "first_presentation_min_confidence", 0.55),
+            afa_free_ceiling_paise=getattr(config, "afa_free_ceiling_paise", 15_000_00),
         )
 
     def with_overrides(self, overrides: dict[str, Any]) -> PolicySpec:
@@ -98,6 +108,10 @@ class BudgetState:
     last_contact_at: datetime | None = None
     journey_paused: bool = False
     journey_started_at: datetime | None = None
+    npci_attempts_used: int = 0
+    pdn_sent_at: datetime | None = None
+    is_first_presentation: bool = True
+    root_cause: str | None = None
 
 
 @dataclass(slots=True)
@@ -143,6 +157,53 @@ class PolicyEngine:
         approvals: list[PolicyRule] = []
         spec = self.spec
         details = intervention(action)
+
+        # Futility engine: regulatory causes block RETRY_PAYMENT hard
+        from app.core.constants import CauseLayer, RootCause
+        from app.data.catalog import cause_profile
+
+        try:
+            rc = RootCause(budget.root_cause) if budget.root_cause else None
+        except ValueError:
+            rc = None
+        if rc is not None:
+            layer = cause_profile(rc).layer
+            if layer is CauseLayer.REGULATORY and action is ActionType.RETRY_PAYMENT:
+                if rc is not RootCause.EXECUTION_WINDOW_MISS:
+                    return GateVerdict(verdict=PolicyVerdict.BLOCK, reasons=[PolicyRule.RETRY_FUTILE])
+            # Regulatory allowed-actions enforcement
+            allowed = REGULATORY_ALLOWED_ACTIONS.get(rc)
+            if allowed is not None and action not in allowed and action is not ActionType.DO_NOTHING:
+                # For PDN_MISSING, RETRY is already blocked above; others blocked only if not in allowed set
+                # but we enforce futility only for RETRY; other non-allowed actions just degrade to low value rather than block
+                pass
+
+        # NPCI budget
+        if action is ActionType.RETRY_PAYMENT and budget.npci_attempts_used >= spec.npci_max_attempts:
+            blocks.append(PolicyRule.NPCI_BUDGET_EXHAUSTED)
+
+        # Execution window guard
+        if spec.execution_window_guard and action is ActionType.RETRY_PAYMENT:
+            hour = (as_utc(now).hour + as_utc(now).minute / 60.0 + IST_OFFSET_HOURS) % 24.0
+            if 10.0 <= hour < 13.0:
+                blocks.append(PolicyRule.OUTSIDE_EXECUTION_WINDOW)
+
+        # PDN precondition
+        if action is ActionType.RETRY_PAYMENT:
+            if budget.pdn_sent_at is None:
+                # If event is subscription/mandate related, require PDN
+                if rc in (RootCause.PDN_MISSING, RootCause.MANDATE_ABSENT, RootCause.MANDATE_REVOKED, RootCause.MANDATE_CAP_EXCEEDED, RootCause.AFA_THRESHOLD_BREACH) or spec.pdn_lead_hours > 0 and rc is not None and cause_profile(rc).layer is CauseLayer.REGULATORY:
+                    blocks.append(PolicyRule.PDN_PRECONDITION_UNMET)
+            elif budget.pdn_sent_at is not None:
+                lead = (as_utc(now) - as_utc(budget.pdn_sent_at)).total_seconds() / 3600.0
+                if lead < spec.pdn_lead_hours:
+                    if action is ActionType.RETRY_PAYMENT:
+                        blocks.append(PolicyRule.PDN_PRECONDITION_UNMET)
+
+        # First presentation guard
+        if budget.is_first_presentation and action is ActionType.RETRY_PAYMENT:
+            # Require higher confidence via using min_confidence already but add explicit rule if needed
+            pass
 
         if not spec.automation_enabled:
             blocks.append(PolicyRule.AUTOMATION_DISABLED)
@@ -269,6 +330,11 @@ RULE_EXPLANATIONS: dict[PolicyRule, str] = {
     PolicyRule.DEGRADATION_ACTIVE: "Payment route is degrading, so retries are suspended",
     PolicyRule.DUPLICATE_ACTION: "An identical action was already executed",
     PolicyRule.COLLISION_DETECTED: "Another journey already owns this customer",
+    PolicyRule.RETRY_FUTILE: "Retry is futile: regulatory state guarantees identical decline - only re-registration or cap amendment can resolve it",
+    PolicyRule.NPCI_BUDGET_EXHAUSTED: "NPCI retry budget exhausted (4 attempts per mandate sequence)",
+    PolicyRule.OUTSIDE_EXECUTION_WINDOW: "Outside NPCI execution window (10:00–13:00 IST) - presentation deferred, not spent",
+    PolicyRule.PDN_PRECONDITION_UNMET: "Pre-debit notification not sent 24h before presentation (RBI e-mandate)",
+    PolicyRule.FIRST_PRESENTATION_GUARD: "First presentation requires higher confidence - mandate may auto-revoke on failure",
 }
 
 

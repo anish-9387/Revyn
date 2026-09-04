@@ -238,6 +238,11 @@ export interface Policy {
   quiet_hours_enforced: boolean;
   degradation_retry_guard: boolean;
   max_discount_pct: number;
+  npci_max_attempts?: number;
+  execution_window_guard?: boolean;
+  pdn_lead_hours?: number;
+  first_presentation_min_confidence?: number;
+  afa_free_ceiling_paise?: number;
   updated_at: string;
 }
 
@@ -323,6 +328,10 @@ export interface Overview {
     policy_blocks: number;
     rejected_actions: number;
     unauthorized_actions: number;
+    npci_attempts_spent?: number;
+    futile_retries_prevented?: number;
+    mandates_tracked?: number;
+    mandates_revoked?: number;
   };
   ab_test: AbTest;
   degradation: ScopeHealth[];
@@ -412,6 +421,8 @@ export interface SimulationArm {
   blocked: number;
   action_mix: Record<string, number>;
   net_expected_paise: number;
+  npci_wasted?: number;
+  futile_prevented?: number;
 }
 
 export interface SimulationResult {

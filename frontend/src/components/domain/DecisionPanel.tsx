@@ -22,7 +22,7 @@ export function DecisionPanel({
         <Card>
           <CardHead
             title={`Chosen: ${actionLabel(decision.chosen_action)}`}
-            hint="Selected on expected value after cost, friction and guardrails — not on raw success probability."
+            hint="Selected on expected value after cost, friction and guardrails - not on raw success probability."
             actions={<Badge tone={VERDICT_TONE[decision.policy_verdict]}>{VERDICT_LABEL[decision.policy_verdict]}</Badge>}
           />
           <KeyValue
@@ -99,7 +99,7 @@ export function DecisionPanel({
         ) : null}
 
         <Card>
-          <CardHead title="How the decision was made" hint="Each step in order — expand to see detail." />
+          <CardHead title="How the decision was made" hint="Each step in order - expand to see detail." />
           <AgentTrace steps={decision.agent_trace} />
         </Card>
       </div>

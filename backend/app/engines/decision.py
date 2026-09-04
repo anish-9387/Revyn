@@ -244,12 +244,22 @@ def decide(inputs: DecisionInputs, gate: ActionGate = open_gate) -> DecisionOutc
 def _rationale(
     inputs: DecisionInputs, chosen: ActionOption, options: list[ActionOption], acted: bool
 ) -> list[str]:
+    from app.core.constants import CauseLayer
     from app.core.money import format_inr
+    from app.data.catalog import cause_profile
 
     diagnosis = inputs.diagnosis
     lines = [
         f"Diagnosed as {diagnosis.label.lower()} with {diagnosis.confidence:.0%} confidence",
     ]
+    # Regulatory futility line
+    try:
+        from app.core.constants import RootCause
+        rc = RootCause(str(inputs.diagnosis.cause))
+        if cause_profile(rc).layer is CauseLayer.REGULATORY and rc is not RootCause.EXECUTION_WINDOW_MISS:
+            lines.append("Retry is futile: regulatory state guarantees identical decline - only re-registration or cap amendment can resolve it")
+    except Exception:
+        pass
     organic = inputs.probabilities.organic
     if not acted:
         best_blocked = next(

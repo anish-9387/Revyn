@@ -50,6 +50,8 @@ class SimulationResult:
     do_nothing: int = 0
     approvals_required: int = 0
     blocked: int = 0
+    npci_wasted: int = 0
+    futile_prevented: int = 0
     action_mix: dict[str, int] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
@@ -66,6 +68,8 @@ class SimulationResult:
             "do_nothing": self.do_nothing,
             "approvals_required": self.approvals_required,
             "blocked": self.blocked,
+            "npci_wasted": self.npci_wasted,
+            "futile_prevented": self.futile_prevented,
             "action_mix": self.action_mix,
             "net_expected_paise": self.expected_incremental_paise
             - self.intervention_cost_paise
@@ -133,6 +137,20 @@ def _record(result: SimulationResult, option, event: RevenueEvent) -> None:
     result.revenue_at_risk_paise += event.amount_paise
     key = str(option.action)
     result.action_mix[key] = result.action_mix.get(key, 0) + 1
+    # Wasted = RETRY on regulatory futile
+    from app.core.constants import RootCause
+    from app.data.catalog import cause_profile
+
+    try:
+        rc = RootCause(str(event.root_cause))
+        layer = cause_profile(rc).layer
+        if layer.value == "regulatory" and option.action is ActionType.RETRY_PAYMENT and rc.value != "execution_window_miss":
+            if option.verdict is PolicyVerdict.BLOCK:
+                result.futile_prevented += 1
+            else:
+                result.npci_wasted += 1
+    except Exception:
+        pass
     if option.action is ActionType.DO_NOTHING:
         result.do_nothing += 1
         return
@@ -155,7 +173,8 @@ def simulate(book: list[ScoredEvent], spec: PolicySpec, label: str) -> Simulatio
 
     for scored in book:
         event = scored.event
-        budget = BudgetState()
+        # Mandate-aware budget: assume 0 used, pdn missing unless known
+        budget = BudgetState(root_cause=event.root_cause, is_first_presentation=True, npci_attempts_used=0)
         gate = engine.gate_for(
             event=event,
             customer=event.customer,

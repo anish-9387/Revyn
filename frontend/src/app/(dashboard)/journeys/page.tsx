@@ -61,7 +61,7 @@ export default function Journeys() {
       />
 
       <Card>
-        <Resource {...page} empty="No journeys yet — run one cycle from the top bar.">
+        <Resource {...page} empty="No journeys yet - run one cycle from the top bar.">
           {(data) => (
             <>
               <DataTable
@@ -119,7 +119,7 @@ export default function Journeys() {
                       row.recovered_amount_paise ? (
                         <span className="text-delta-up">{inr(row.recovered_amount_paise)}</span>
                       ) : (
-                        <span className="text-muted">—</span>
+                        <span className="text-muted">-</span>
                       ),
                   },
                   { key: "cost", head: "Cost", align: "right", cell: (row) => inr(row.cost_paise) },

@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     clock_speedup: float = 120.0
     max_actions_per_tick: int = 25
 
+    # Security
+    api_key: str | None = None
+
     # Synthetic data
     seed: int = 20260901
     synthetic_transactions: int = 10_000

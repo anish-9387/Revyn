@@ -6,6 +6,7 @@ from app.models.event import RevenueEvent
 from app.models.insight import DegradationWindow, RouteHealthBucket, StrategyStat
 from app.models.journey import Decision, RecoveryAction, RecoveryJourney
 from app.models.ledger import LedgerEntry
+from app.models.mandate import Mandate
 from app.models.policy import PolicyConfig
 
 __all__ = [
@@ -14,6 +15,7 @@ __all__ = [
     "Decision",
     "DegradationWindow",
     "LedgerEntry",
+    "Mandate",
     "PolicyConfig",
     "RecoveryAction",
     "RecoveryJourney",

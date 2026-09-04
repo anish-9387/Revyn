@@ -3,7 +3,10 @@ import type { Route } from "next";
 export const href = (path: string) => path as Route;
 
 export const NAV = [
+  { path: "/landing", label: "Product & Docs", hint: "Why Revyn wins", icon: "book" },
   { path: "/", label: "Command centre", hint: "Live revenue position", icon: "grid" },
+  { path: "/", label: "Product & Docs", hint: "Why Revyn wins", icon: "book" },
+  { path: "/dashboard", label: "Command centre", hint: "Live revenue position", icon: "grid" },
   { path: "/radar", label: "Risk radar", hint: "Every at-risk rupee, ranked", icon: "radar" },
   { path: "/journeys", label: "Journeys", hint: "Recovery workflows in flight", icon: "route" },
   { path: "/approvals", label: "Approvals", hint: "Actions waiting on a human", icon: "shield" },

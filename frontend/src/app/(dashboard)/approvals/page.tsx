@@ -111,7 +111,7 @@ function ApprovalCard({
       <CardHead
         title={
           <>
-            {actionLabel(item.action.action_type)} —{" "}
+            {actionLabel(item.action.action_type)} -{" "}
             <Link
               href={href(`/journeys/${item.journey_id}`)}
               className="text-series-1 underline underline-offset-2"
@@ -154,10 +154,10 @@ function ApprovalCard({
               "Discount offered",
               item.action.discount_pct ? `${item.action.discount_pct.toFixed(1)}%` : "none",
             ],
-            ["Expected recovery", item.decision ? inr(item.decision.expected_recovery_paise) : "—"],
+            ["Expected recovery", item.decision ? inr(item.decision.expected_recovery_paise) : "-"],
             [
               "Uplift over doing nothing",
-              item.decision ? `+${pct(item.decision.uplift, 1)}` : "—",
+              item.decision ? `+${pct(item.decision.uplift, 1)}` : "-",
             ],
           ]}
         />

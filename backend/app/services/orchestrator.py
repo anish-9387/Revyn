@@ -132,13 +132,28 @@ class Orchestrator:
         events = await self._unclaimed_events(session, limit)
         for index, event in enumerate(events):
             report.scanned += 1
+            # Mandate-aware budget
+            mandate = None
+            if getattr(event, "mandate_id", None):
+                from sqlalchemy import select as _select
+
+                from app.models.mandate import Mandate as _Mandate
+
+                mandate = (await session.execute(_select(_Mandate).where(_Mandate.id == event.mandate_id))).scalar_one_or_none()
+            budget = BudgetState(
+                journey_paused=policy.spec.paused,
+                npci_attempts_used=mandate.attempts_used if mandate else 0,
+                pdn_sent_at=mandate.last_pdn_sent_at if mandate else None,
+                is_first_presentation=(mandate.attempts_used == 0) if mandate else True,
+                root_cause=event.root_cause,
+            )
             ctx = RecoveryContext(
                 session=session,
                 event=event,
                 customer=event.customer,
                 policy=policy,
                 degradation=state,
-                budget=BudgetState(journey_paused=policy.spec.paused),
+                budget=budget,
                 allow_reasoner=index < settings.llm_max_events_per_scan,
             )
             await self.pipeline.plan(ctx)
@@ -444,10 +459,13 @@ class Orchestrator:
                 retries_used=journey.retries_used,
                 discounts_used=journey.discounts_used,
                 voice_used=journey.voice_used,
+                npci_attempts_used=journey.npci_attempts_used,
                 last_contact_at=last_contact,
                 journey_paused=JourneyState(journey.state) is JourneyState.PAUSED
                 or policy.spec.paused,
                 journey_started_at=as_utc(journey.created_at) if journey.created_at else None,
+                root_cause=event.root_cause,
+                is_first_presentation=journey.npci_attempts_used == 0,
             ),
         )
 
@@ -486,6 +504,8 @@ class Orchestrator:
             return
         if status is ActionStatus.BLOCKED:
             report.blocked += 1
+            if PolicyRule.RETRY_FUTILE in (action.blocked_reasons or []):
+                journey.futile_retries_prevented += 1
             await self._next_step_or_close(
                 session, ctx, journey, report, reason="Action blocked by policy"
             )
@@ -508,6 +528,25 @@ class Orchestrator:
             )
             gateway_status = await self.executor.execute(ctx, action)
             self._consume_budget(journey, ctx.event, ActionType(action.action_type))
+            # Mandate ledger updates
+            if ActionType(action.action_type) is ActionType.RETRY_PAYMENT:
+                journey.npci_attempts_used += 1
+                if getattr(ctx.event, "mandate_id", None):
+                    from sqlalchemy import select as _select
+
+                    from app.models.mandate import Mandate as _Mandate
+
+                    m = (await session.execute(_select(_Mandate).where(_Mandate.id == ctx.event.mandate_id))).scalar_one_or_none()
+                    if m:
+                        m.attempts_used += 1
+            if ActionType(action.action_type) is ActionType.SEND_PDN and getattr(ctx.event, "mandate_id", None):
+                from sqlalchemy import select as _select
+
+                from app.models.mandate import Mandate as _Mandate
+
+                m = (await session.execute(_select(_Mandate).where(_Mandate.id == ctx.event.mandate_id))).scalar_one_or_none()
+                if m:
+                    m.last_pdn_sent_at = utcnow()
             journey.cost_paise += action.cost_paise
             ctx.event.recovery_cost_paise += action.cost_paise
             report.executed += 1
@@ -565,6 +604,8 @@ class Orchestrator:
             else ActionStatus.BLOCKED
         )
         action.blocked_reasons = [str(reason) for reason in verdict.reasons]
+        if PolicyRule.RETRY_FUTILE in verdict.reasons:
+            ctx.journey.futile_retries_prevented += 1
         await audit.record(
             session,
             event_type=AuditEvent.ACTION_BLOCKED,

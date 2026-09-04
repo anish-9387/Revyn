@@ -147,6 +147,46 @@ INTERVENTIONS: dict[ActionType, Intervention] = {
         touches_gateway=False,
         description="Check a captured promise-to-pay on its due date and escalate if broken.",
     ),
+    ActionType.REREGISTER_MANDATE: Intervention(
+        action=ActionType.REREGISTER_MANDATE,
+        label="Re-register mandate",
+        cost_paise=150,
+        friction_score=0.25,
+        base_success=0.48,
+        consumes_contact=True,
+        touches_gateway=True,
+        description="Send re-registration link for AFA / UPI-PIN reverification.",
+    ),
+    ActionType.AMEND_MANDATE_CAP: Intervention(
+        action=ActionType.AMEND_MANDATE_CAP,
+        label="Amend mandate cap",
+        cost_paise=100,
+        friction_score=0.18,
+        base_success=0.52,
+        consumes_contact=True,
+        touches_gateway=True,
+        description="Request customer to authorise a higher mandate cap.",
+    ),
+    ActionType.SEND_PDN: Intervention(
+        action=ActionType.SEND_PDN,
+        label="Pre-debit notification",
+        cost_paise=20,
+        friction_score=0.08,
+        base_success=0.35,
+        consumes_contact=True,
+        touches_gateway=False,
+        description="Send RBI-mandated 24h pre-debit notification; doubles as balance top-up nudge.",
+    ),
+    ActionType.SWITCH_RAIL: Intervention(
+        action=ActionType.SWITCH_RAIL,
+        label="Switch rail",
+        cost_paise=250,
+        friction_score=0.12,
+        base_success=0.38,
+        consumes_contact=True,
+        touches_gateway=True,
+        description="Move recurring charge from failing rail to healthier one.",
+    ),
 }
 
 #: Actions each loss class can legally use. A cart that never reached the gateway
@@ -162,6 +202,10 @@ ALLOWED_ACTIONS: dict[EventKind, tuple[ActionType, ...]] = {
         ActionType.VOICE,
         ActionType.DISCOUNT,
         ActionType.HUMAN_ESCALATION,
+        ActionType.REREGISTER_MANDATE,
+        ActionType.AMEND_MANDATE_CAP,
+        ActionType.SEND_PDN,
+        ActionType.SWITCH_RAIL,
         ActionType.DO_NOTHING,
     ),
     EventKind.CART_ABANDONMENT: (
@@ -181,6 +225,10 @@ ALLOWED_ACTIONS: dict[EventKind, tuple[ActionType, ...]] = {
         ActionType.EMAIL,
         ActionType.VOICE,
         ActionType.HUMAN_ESCALATION,
+        ActionType.REREGISTER_MANDATE,
+        ActionType.AMEND_MANDATE_CAP,
+        ActionType.SEND_PDN,
+        ActionType.SWITCH_RAIL,
         ActionType.DO_NOTHING,
     ),
     EventKind.OVERDUE_INVOICE: (
@@ -193,6 +241,15 @@ ALLOWED_ACTIONS: dict[EventKind, tuple[ActionType, ...]] = {
         ActionType.HUMAN_ESCALATION,
         ActionType.DO_NOTHING,
     ),
+}
+
+REGULATORY_ALLOWED_ACTIONS: dict[RootCause, tuple[ActionType, ...]] = {
+    RootCause.MANDATE_ABSENT: (ActionType.REREGISTER_MANDATE, ActionType.SWITCH_RAIL, ActionType.HUMAN_ESCALATION, ActionType.DO_NOTHING),
+    RootCause.MANDATE_REVOKED: (ActionType.REREGISTER_MANDATE, ActionType.HUMAN_ESCALATION, ActionType.DO_NOTHING),
+    RootCause.MANDATE_CAP_EXCEEDED: (ActionType.AMEND_MANDATE_CAP, ActionType.REREGISTER_MANDATE, ActionType.HUMAN_ESCALATION, ActionType.DO_NOTHING),
+    RootCause.PDN_MISSING: (ActionType.SEND_PDN, ActionType.WHATSAPP, ActionType.SMS, ActionType.EMAIL, ActionType.DO_NOTHING),
+    RootCause.AFA_THRESHOLD_BREACH: (ActionType.REREGISTER_MANDATE, ActionType.PAYMENT_LINK, ActionType.HUMAN_ESCALATION, ActionType.DO_NOTHING),
+    RootCause.EXECUTION_WINDOW_MISS: (ActionType.RETRY_PAYMENT, ActionType.SEND_PDN, ActionType.DO_NOTHING),
 }
 
 
@@ -486,6 +543,66 @@ CAUSE_LIBRARY.update(
             narrative="Evidence is insufficient for a confident diagnosis; the safest action wins.",
             affinity={},
         ),
+        RootCause.MANDATE_ABSENT: CauseProfile(
+            cause=RootCause.MANDATE_ABSENT,
+            layer=CauseLayer.REGULATORY,
+            label="No mandate on file",
+            transient=False,
+            retryable=False,
+            organic_multiplier=0.15,
+            narrative="No valid mandate exists for this customer; retrying is guaranteed to fail.",
+            affinity={ActionType.REREGISTER_MANDATE: 1.8, ActionType.SWITCH_RAIL: 1.3, ActionType.RETRY_PAYMENT: 0.05},
+        ),
+        RootCause.MANDATE_REVOKED: CauseProfile(
+            cause=RootCause.MANDATE_REVOKED,
+            layer=CauseLayer.REGULATORY,
+            label="Mandate revoked by customer",
+            transient=False,
+            retryable=False,
+            organic_multiplier=0.10,
+            narrative="Customer revoked the mandate; only re-registration can resolve this.",
+            affinity={ActionType.REREGISTER_MANDATE: 1.9, ActionType.RETRY_PAYMENT: 0.03},
+        ),
+        RootCause.MANDATE_CAP_EXCEEDED: CauseProfile(
+            cause=RootCause.MANDATE_CAP_EXCEEDED,
+            layer=CauseLayer.REGULATORY,
+            label="Charge exceeds mandate cap",
+            transient=False,
+            retryable=False,
+            organic_multiplier=0.20,
+            narrative="Subscription amount exceeds authorised mandate cap; needs cap amendment.",
+            affinity={ActionType.AMEND_MANDATE_CAP: 1.85, ActionType.REREGISTER_MANDATE: 1.2, ActionType.RETRY_PAYMENT: 0.04},
+        ),
+        RootCause.PDN_MISSING: CauseProfile(
+            cause=RootCause.PDN_MISSING,
+            layer=CauseLayer.REGULATORY,
+            label="Pre-debit notification not delivered",
+            transient=False,
+            retryable=False,
+            organic_multiplier=0.25,
+            narrative="RBI requires PDN 24h before debit; without it the debit is blocked.",
+            affinity={ActionType.SEND_PDN: 1.9, ActionType.WHATSAPP: 1.1, ActionType.RETRY_PAYMENT: 0.06},
+        ),
+        RootCause.AFA_THRESHOLD_BREACH: CauseProfile(
+            cause=RootCause.AFA_THRESHOLD_BREACH,
+            layer=CauseLayer.REGULATORY,
+            label="Amount exceeds AFA-free ceiling",
+            transient=False,
+            retryable=False,
+            organic_multiplier=0.18,
+            narrative="Amount > ₹15,000 requires fresh customer authentication per RBI e-mandate.",
+            affinity={ActionType.REREGISTER_MANDATE: 1.7, ActionType.PAYMENT_LINK: 1.25, ActionType.RETRY_PAYMENT: 0.05},
+        ),
+        RootCause.EXECUTION_WINDOW_MISS: CauseProfile(
+            cause=RootCause.EXECUTION_WINDOW_MISS,
+            layer=CauseLayer.REGULATORY,
+            label="Outside NPCI execution window",
+            transient=True,
+            retryable=False,
+            organic_multiplier=0.90,
+            narrative="Presented during NPCI peak window 10:00-13:00 IST; technical decline, not customer fault.",
+            affinity={ActionType.RETRY_PAYMENT: 1.1, ActionType.SEND_PDN: 0.95},
+        ),
     }
 )
 
@@ -549,6 +666,12 @@ FAILURE_CAUSE_PRIORS: dict[FailureCode, tuple[tuple[RootCause, float], ...]] = {
         (RootCause.BUYER_CASHFLOW, 0.60),
         (RootCause.DISPUTED_INVOICE, 0.26),
     ),
+    FailureCode.MANDATE_NOT_FOUND: ((RootCause.MANDATE_ABSENT, 0.96),),
+    FailureCode.MANDATE_REVOKED: ((RootCause.MANDATE_REVOKED, 0.97),),
+    FailureCode.MANDATE_AMOUNT_EXCEEDS: ((RootCause.MANDATE_CAP_EXCEEDED, 0.95),),
+    FailureCode.PDN_NOT_DELIVERED: ((RootCause.PDN_MISSING, 0.94),),
+    FailureCode.AFA_REQUIRED: ((RootCause.AFA_THRESHOLD_BREACH, 0.96),),
+    FailureCode.MANDATE_PAUSED: ((RootCause.MANDATE_REVOKED, 0.70), (RootCause.MANDATE_ABSENT, 0.20)),
 }
 
 FAILURE_LABELS: dict[FailureCode, str] = {
@@ -571,6 +694,12 @@ FAILURE_LABELS: dict[FailureCode, str] = {
     FailureCode.METHOD_UNAVAILABLE: "Preferred method unavailable",
     FailureCode.INVOICE_UNPAID: "Invoice past due date",
     FailureCode.PROMISE_BROKEN: "Promise to pay not honoured",
+    FailureCode.MANDATE_NOT_FOUND: "No mandate on file",
+    FailureCode.MANDATE_REVOKED: "Mandate revoked by customer",
+    FailureCode.MANDATE_AMOUNT_EXCEEDS: "Charge exceeds mandate cap",
+    FailureCode.PDN_NOT_DELIVERED: "Pre-debit notification not delivered",
+    FailureCode.AFA_REQUIRED: "Additional factor authentication required",
+    FailureCode.MANDATE_PAUSED: "Mandate paused",
 }
 
 #: Display names for the four loss classes, matching the wording the dashboard uses.

@@ -21,6 +21,8 @@ from app.core.constants import (
     EventKind,
     EventStatus,
     FailureCode,
+    MandateRail,
+    MandateStatus,
     PaymentMethod,
     RootCause,
 )
@@ -62,18 +64,23 @@ KIND_WEIGHTS: dict[EventKind, float] = {
 }
 
 PAYMENT_FAILURE_CODES: dict[FailureCode, float] = {
-    FailureCode.INSUFFICIENT_FUNDS: 0.20,
-    FailureCode.ISSUER_DECLINED: 0.19,
-    FailureCode.AUTHENTICATION_FAILED: 0.14,
-    FailureCode.GATEWAY_TIMEOUT: 0.11,
-    FailureCode.OTP_TIMEOUT: 0.08,
-    FailureCode.CARD_EXPIRED: 0.07,
-    FailureCode.INVALID_VPA: 0.06,
-    FailureCode.PSP_UNAVAILABLE: 0.05,
-    FailureCode.ISSUER_UNAVAILABLE: 0.04,
-    FailureCode.LIMIT_EXCEEDED: 0.03,
+    FailureCode.INSUFFICIENT_FUNDS: 0.18,
+    FailureCode.ISSUER_DECLINED: 0.16,
+    FailureCode.AUTHENTICATION_FAILED: 0.12,
+    FailureCode.GATEWAY_TIMEOUT: 0.10,
+    FailureCode.OTP_TIMEOUT: 0.07,
+    FailureCode.CARD_EXPIRED: 0.06,
+    FailureCode.INVALID_VPA: 0.05,
+    FailureCode.PSP_UNAVAILABLE: 0.04,
+    FailureCode.ISSUER_UNAVAILABLE: 0.03,
+    FailureCode.LIMIT_EXCEEDED: 0.02,
     FailureCode.PAYMENT_CANCELLED: 0.02,
     FailureCode.CONFIGURATION_ERROR: 0.01,
+    FailureCode.MANDATE_NOT_FOUND: 0.04,
+    FailureCode.MANDATE_REVOKED: 0.04,
+    FailureCode.MANDATE_AMOUNT_EXCEEDS: 0.03,
+    FailureCode.PDN_NOT_DELIVERED: 0.03,
+    FailureCode.AFA_REQUIRED: 0.02,
 }
 
 CART_FAILURE_CODES: dict[FailureCode, float] = {
@@ -155,6 +162,7 @@ LAST_NAMES = [
 class GeneratedDataset:
     customers: list[Customer] = field(default_factory=list)
     events: list[RevenueEvent] = field(default_factory=list)
+    mandates: list = field(default_factory=list)
 
     @property
     def live_events(self) -> list[RevenueEvent]:
@@ -234,12 +242,45 @@ ROUTE_BY_METHOD: dict[PaymentMethod, tuple[str, ...]] = {
 
 SUBSCRIPTION_PLANS = (299, 499, 999, 1_999, 4_999, 9_999)
 
+MANDATE_RAILS = (MandateRail.UPI_AUTOPAY, MandateRail.CARD_EMANDATE, MandateRail.NACH)
+
+
+def _make_mandate(rng: random.Random, customer, now: datetime):
+    from app.models.mandate import Mandate
+
+    rail = rng.choice(MANDATE_RAILS)
+    status = MandateStatus.ACTIVE if rng.random() < 0.85 else rng.choice([MandateStatus.REVOKED, MandateStatus.PAUSED])
+    cap = rng.choice([5_000_00, 10_000_00, 15_000_00, 50_000_00])
+    return Mandate(
+        customer_id=customer.id,
+        external_ref=f"MND{100000 + rng.randint(0, 999999)}",
+        rail=rail,
+        status=status,
+        max_amount_paise=cap,
+        sequence_number=rng.randint(1, 3),
+        attempts_used=rng.randint(0, 2),
+        last_pdn_sent_at=now - timedelta(hours=rng.randint(5, 48)) if rng.random() < 0.7 else None,
+        registered_at=now - timedelta(days=rng.randint(10, 400)),
+        revoked_at=now - timedelta(days=rng.randint(1, 10)) if status == MandateStatus.REVOKED else None,
+    )
+
 
 def _failure_code(rng: random.Random, kind: EventKind, degraded: bool) -> FailureCode:
     if kind is EventKind.CART_ABANDONMENT:
         return _weighted(rng, CART_FAILURE_CODES)
     if kind is EventKind.OVERDUE_INVOICE:
         return _weighted(rng, INVOICE_FAILURE_CODES)
+    if kind is EventKind.SUBSCRIPTION_FAILURE and rng.random() < 0.15:
+        return _weighted(
+            rng,
+            {
+                FailureCode.MANDATE_REVOKED: 0.30,
+                FailureCode.MANDATE_NOT_FOUND: 0.25,
+                FailureCode.MANDATE_AMOUNT_EXCEEDS: 0.20,
+                FailureCode.PDN_NOT_DELIVERED: 0.15,
+                FailureCode.AFA_REQUIRED: 0.10,
+            },
+        )
     if degraded:
         return _weighted(
             rng,
@@ -472,6 +513,7 @@ def generate(
     rng = random.Random(seed)
     now = now or utcnow()
     dataset = GeneratedDataset(customers=_build_customers(rng, customer_count))
+    # Mandates are created after customer IDs are assigned (in seeding), not here.
     degradation_end = now - timedelta(minutes=12)
     degradation_start = degradation_end - timedelta(minutes=105)
 

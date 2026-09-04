@@ -43,7 +43,7 @@ export default function Playbook() {
     <>
       <PageHead
         title="Merchant recovery memory"
-        hint="Revyn does not assume what works. It learns per segment — loss class, cause layer, ticket size — and remembers only what it has actually tried."
+        hint="Revyn does not assume what works. It learns per segment - loss class, cause layer, ticket size - and remembers only what it has actually tried."
       />
 
       <div className="grid gap-4 xl:grid-cols-[1fr_20rem]">
@@ -71,14 +71,14 @@ export default function Playbook() {
         </Card>
 
         <Card>
-          <CardHead title="The learned quirk" hint="Not configured by anyone — discovered from outcomes." />
+          <CardHead title="The learned quirk" hint="Not configured by anyone - discovered from outcomes." />
           {best && worst && best.action !== worst.action ? (
             <p className="text-xs leading-relaxed text-ink-2">
               <span className="text-good">{actionLabel(best.action)}</span> recovers{" "}
               <span className="tabular-nums">{pct(best.rate, 1)}</span> of the events it touches, while{" "}
               <span className="text-serious">{actionLabel(worst.action)}</span> only manages{" "}
               <span className="tabular-nums">{pct(worst.rate, 1)}</span>. Revenue-weighted, that gap is why the
-              Strategist keeps reaching for the first and stops paying for the second — even where both are allowed
+              Strategist keeps reaching for the first and stops paying for the second - even where both are allowed
               by policy.
             </p>
           ) : (

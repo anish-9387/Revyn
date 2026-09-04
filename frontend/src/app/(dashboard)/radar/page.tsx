@@ -171,7 +171,7 @@ function FocusPanel({ item, onClose }: { item: RiskItem; onClose: () => void }) 
     <div ref={anchor} className="scroll-mt-20">
       <Card>
         <CardHead
-          title={`${item.external_ref} — ${LOSS_CLASS_LABEL[item.kind]}`}
+          title={`${item.external_ref} - ${LOSS_CLASS_LABEL[item.kind]}`}
           hint={`${inr(item.amount_paise, { precise: true })} · ${methodLabel(item.payment_method)} via ${item.route} · ${
             item.failure_reason ?? "no payment message"
           }`}
@@ -187,7 +187,7 @@ function FocusPanel({ item, onClose }: { item: RiskItem; onClose: () => void }) 
           <DecisionPanel decision={decisions.data[0]} />
         ) : (
           <p className="text-xs text-muted">
-            No decision recorded yet — this event has been scored but not planned. Run one cycle to let the
+            No decision recorded yet - this event has been scored but not planned. Run one cycle to let the
             agents pick it up.
           </p>
         )}

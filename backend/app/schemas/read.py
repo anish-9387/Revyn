@@ -212,6 +212,11 @@ class PolicyRead(ApiModel):
     quiet_hours_enforced: bool
     degradation_retry_guard: bool
     max_discount_pct: float
+    npci_max_attempts: int
+    execution_window_guard: bool
+    pdn_lead_hours: float
+    first_presentation_min_confidence: float
+    afa_free_ceiling_paise: int
     updated_at: datetime
 
 

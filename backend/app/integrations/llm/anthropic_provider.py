@@ -17,10 +17,12 @@ from app.integrations.llm.base import (
 from app.integrations.llm.prompts import (
     DIAGNOSIS_FORMAT,
     DIAGNOSIS_SYSTEM,
+    HINGLISH_FORMAT,
+    HINGLISH_SYSTEM,
     LEAKAGE_FORMAT,
     LEAKAGE_SYSTEM,
     PROMISE_FORMAT,
-    PROMISE_SYSTEM,
+    PROMISE_SYSTEM_HINGLISH,
     STRATEGY_FORMAT,
     STRATEGY_SYSTEM,
 )
@@ -127,7 +129,16 @@ class AnthropicReasoner:
         return await self._structured(system=LEAKAGE_SYSTEM, payload=context, response_format=LEAKAGE_FORMAT, model_cls=LeakageInsights, instruction="Write insights about where this merchant is losing revenue.")
 
     async def extract_promise(self, transcript: str, context: dict) -> PromiseExtraction | None:
-        return await self._structured(system=PROMISE_SYSTEM, payload={**context, "transcript": transcript}, response_format=PROMISE_FORMAT, model_cls=PromiseExtraction, instruction="Extract any promise to pay from this conversation.")
+        return await self._structured(system=PROMISE_SYSTEM_HINGLISH, payload={**context, "transcript": transcript}, response_format=PROMISE_FORMAT, model_cls=PromiseExtraction, instruction="Extract any promise to pay from this conversation.")
+
+    async def generate_message(self, context: dict) -> dict | None:
+        from pydantic import BaseModel
+
+        class HinglishOut(BaseModel):
+            body: str
+
+        out = await self._structured(system=HINGLISH_SYSTEM, payload=context, response_format=HINGLISH_FORMAT, model_cls=HinglishOut, instruction="Generate the Hinglish recovery message.")
+        return {"body": out.body} if out else None
 
     async def close(self) -> None:
         await self._client.close()

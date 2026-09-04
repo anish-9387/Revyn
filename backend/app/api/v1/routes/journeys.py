@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import func, select
 
-from app.api.deps import PaginationDep, SessionDep
+from app.api.deps import ApiKeyDep, PaginationDep, SessionDep
 from app.core.constants import JourneyState
 from app.models.journey import RecoveryJourney
 from app.schemas.common import Page
@@ -64,21 +64,21 @@ async def get_journey(session: SessionDep, journey_id: str) -> JourneyDetail:
 
 
 @router.post("/{journey_id}/pause", response_model=JourneyRead)
-async def pause(session: SessionDep, journey_id: str, payload: JourneyActionRequest) -> JourneyRead:
+async def pause(session: SessionDep, journey_id: str, payload: JourneyActionRequest, _auth: ApiKeyDep = None) -> JourneyRead:  # type: ignore[assignment]
     journey = await orchestrator.pause_journey(session, journey_id, actor=payload.actor)
     return _summarise(journey)
 
 
 @router.post("/{journey_id}/resume", response_model=JourneyRead)
 async def resume(
-    session: SessionDep, journey_id: str, payload: JourneyActionRequest
+    session: SessionDep, journey_id: str, payload: JourneyActionRequest, _auth: ApiKeyDep = None  # type: ignore[assignment]
 ) -> JourneyRead:
     journey = await orchestrator.resume_journey(session, journey_id, actor=payload.actor)
     return _summarise(journey)
 
 
 @router.post("/{journey_id}/stop", response_model=JourneyRead)
-async def stop(session: SessionDep, journey_id: str, payload: JourneyActionRequest) -> JourneyRead:
+async def stop(session: SessionDep, journey_id: str, payload: JourneyActionRequest, _auth: ApiKeyDep = None) -> JourneyRead:  # type: ignore[assignment]
     journey = await orchestrator.close_journey(
         session, journey_id, actor=payload.actor, reason=payload.reason
     )

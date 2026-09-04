@@ -22,6 +22,7 @@ import type {
 } from "@/lib/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
 
 export class ApiError extends Error {
   constructor(
@@ -47,10 +48,12 @@ function buildUrl(path: string, query?: Query): string {
 
 async function request<T>(path: string, init?: RequestInit & { query?: Query }): Promise<T> {
   const { query, ...options } = init ?? {};
+  const headers: Record<string, string> = { "Content-Type": "application/json", ...(options.headers as Record<string, string> | undefined) };
+  if (API_KEY) headers["X-API-Key"] = API_KEY;
   const response = await fetch(buildUrl(path, query), {
     ...options,
     cache: "no-store",
-    headers: { "Content-Type": "application/json", ...options.headers },
+    headers,
   });
   if (!response.ok) {
     const body = await response.text();

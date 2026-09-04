@@ -49,6 +49,7 @@ class RevenueEvent(Base, TimestampMixin):
 
     customer_id: Mapped[str] = mapped_column(ForeignKey("customers.id"), index=True)
     customer: Mapped[Customer] = relationship(back_populates="events", lazy="joined")
+    mandate_id: Mapped[str | None] = mapped_column(ForeignKey("mandates.id"), nullable=True, index=True)
 
     amount_paise: Mapped[int] = mapped_column(Integer)
     occurred_at: Mapped[datetime] = utc_column(index=True)

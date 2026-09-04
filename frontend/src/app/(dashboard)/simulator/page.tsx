@@ -183,7 +183,7 @@ function Outcome({ result }: { result: SimulationResult }) {
           title="Proposed against live"
           hint={`Scored on ${compact(result.sample_size)} open events. ${
             Object.keys(changed).length === 0
-              ? "No fields changed yet — this is the live policy scored against itself."
+              ? "No fields changed yet - this is the live policy scored against itself."
               : Object.entries(changed)
                   .map(([field, move]) => `${fieldLabel(field)}: ${moveValue(field, move.from)} → ${moveValue(field, move.to)}`)
                   .join("; ")
@@ -204,7 +204,7 @@ function Outcome({ result }: { result: SimulationResult }) {
             ) : moreMoney ? (
               <>
                 {inr(delta.net_expected_delta_paise)} more expected net, but{" "}
-                {compact(delta.contact_delta)} additional customer contacts —{" "}
+                {compact(delta.contact_delta)} additional customer contacts -{" "}
                 {pct(Math.abs(delta.contact_change_pct), 0)} more friction spent.
               </>
             ) : (
@@ -222,7 +222,7 @@ function Outcome({ result }: { result: SimulationResult }) {
 
       <ActionMixBars
         title="How the action mix shifts"
-        hint="The interesting policies do not just do less — they redistribute effort towards actions that actually convert."
+        hint="The interesting policies do not just do less - they redistribute effort towards actions that actually convert."
         arms={ARMS.map(({ key, colour }) => ({
           label: result[key].label,
           colour,

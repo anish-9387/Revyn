@@ -15,7 +15,7 @@ Reported by `GET /api/v1/ops/model` and rendered on `/ledger`:
 | --- | --- |
 | **Brier score** | the headline. Accuracy *and* calibration in one number, and it punishes confident wrongness |
 | Log loss | sensitive to the tails, where over-confidence costs real money |
-| ROC AUC | ranking quality only — it says nothing about whether 0.7 means 70% |
+| ROC AUC | ranking quality only - it says nothing about whether 0.7 means 70% |
 | Calibration error | mean absolute gap between predicted and observed rate across bins |
 | Base rate | the number every other number must be read against |
 
@@ -60,7 +60,7 @@ cost per recovery ₹3.76, control organic rate 17.77% (n=2,183).
 ## 3. The A/B holdout
 
 Live events are split into `control` and `treatment` cohorts at detection. Control events are fully
-scored and recorded — decision, probability, rationale — and then deliberately left alone. That gives
+scored and recorded - decision, probability, rationale - and then deliberately left alone. That gives
 the organic rate a real denominator instead of a modelling assumption.
 
 Last measured: control n=16 -> 18.8% recovery at **0.00** contacts per event; treatment n=104 ->
@@ -79,7 +79,7 @@ Last measured: 82 executed, **0 duplicates**, **0 unauthorised**, 40 blocked by 
 a human, audit chain valid across 781 entries.
 
 Zero duplicates is a claim about the idempotency keys and the customer lock, and `tests/test_safety.py`
-asserts it directly — including concurrent execution of the same action.
+asserts it directly - including concurrent execution of the same action.
 
 ## Reproducing
 
@@ -95,5 +95,5 @@ curl localhost:8000/api/v1/audit/verify
 ```
 
 Figures move with the seed, the number of cycles and how many approvals a human grants. The
-relationships — Brier below the base-rate-only baseline, incremental well under gross, duplicates at
-zero — are what should hold every time.
+relationships - Brier below the base-rate-only baseline, incremental well under gross, duplicates at
+zero - are what should hold every time.

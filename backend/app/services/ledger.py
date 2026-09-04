@@ -86,6 +86,15 @@ async def totals(session: AsyncSession) -> dict:
         func.coalesce(func.sum(LedgerEntry.incremental_net_paise), 0),
     )
     entries, gross, organic, cost, incremental = (await session.execute(stmt)).one()
+    # NPCI stats
+    npci_spent = 0
+    futile = 0
+    try:
+        from app.models.journey import RecoveryJourney
+        npci_spent = int((await session.execute(select(func.coalesce(func.sum(RecoveryJourney.npci_attempts_used), 0)))).scalar() or 0)
+        futile = int((await session.execute(select(func.coalesce(func.sum(RecoveryJourney.futile_retries_prevented), 0)))).scalar() or 0)
+    except Exception:
+        pass
     return {
         "entries": int(entries or 0),
         "gross_recovered_paise": int(gross or 0),
@@ -93,6 +102,9 @@ async def totals(session: AsyncSession) -> dict:
         "cost_paise": int(cost or 0),
         "incremental_net_paise": int(incremental or 0),
         "cost_per_recovery_paise": int(cost / entries) if entries else 0,
+        "npci_attempts_spent": npci_spent,
+        "futile_retries_prevented": futile,
+        "mandates_saved": futile,
     }
 
 

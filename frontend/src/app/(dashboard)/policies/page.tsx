@@ -235,7 +235,7 @@ export default function Policies() {
         <div className="grid gap-5 md:grid-cols-2">
           <Toggle
             label="Respect quiet hours"
-            hint={`No customer contact between ${draft.quiet_hours_start}:00 and ${draft.quiet_hours_end}:00 local time. Retries still run — they are silent.`}
+            hint={`No customer contact between ${draft.quiet_hours_start}:00 and ${draft.quiet_hours_end}:00 local time. Retries still run - they are silent.`}
             checked={draft.quiet_hours_enforced}
             onChange={(next) => set("quiet_hours_enforced", next)}
           />
@@ -262,7 +262,7 @@ export default function Policies() {
         </div>
         <p className="mt-4 border-t border-hairline pt-3 text-[11px] leading-relaxed text-muted">
           Changes are versioned and written to the audit trail with the actor that made them. Test a change on the{" "}
-          strategy simulator before saving it here — the simulator replays real at-risk events against both policies.
+          strategy simulator before saving it here - the simulator replays real at-risk events against both policies.
         </p>
       </Card>
     </>

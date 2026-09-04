@@ -25,6 +25,7 @@ from app.models.event import RevenueEvent
 from app.models.insight import DegradationWindow, RouteHealthBucket, StrategyStat
 from app.models.journey import Decision, RecoveryAction, RecoveryJourney
 from app.models.ledger import LedgerEntry
+from app.models.mandate import Mandate
 from app.services import audit
 from app.services.policy import BudgetState, load_engine
 
@@ -41,6 +42,7 @@ RESET_ORDER = (
     DegradationWindow,
     RouteHealthBucket,
     RevenueEvent,
+    Mandate,
     Customer,
 )
 
@@ -77,6 +79,47 @@ async def seed(
     )
 
     session.add_all(dataset.customers)
+    await session.flush()
+    # Create mandates for ~45% of customers now that IDs exist
+    import random as _random
+    from datetime import timedelta as _td
+
+    from app.core.constants import MandateRail, MandateStatus
+    rng2 = _random.Random(settings.seed + 1)
+    now2 = dataset.events[0].occurred_at if dataset.events else None
+    # Use current time for mandate timestamps
+    from app.core.clock import utcnow as _utcnow
+
+    _now = _utcnow()
+    mandates: list[Mandate] = []
+    mandat_by_customer: dict[str, Mandate] = {}
+    for cust in dataset.customers:
+        if rng2.random() < 0.45:
+            rail = rng2.choice([MandateRail.UPI_AUTOPAY, MandateRail.CARD_EMANDATE, MandateRail.NACH])
+            status = MandateStatus.ACTIVE if rng2.random() < 0.85 else rng2.choice([MandateStatus.REVOKED, MandateStatus.PAUSED])
+            cap = rng2.choice([5_000_00, 10_000_00, 15_000_00, 50_000_00])
+            m = Mandate(
+                customer_id=cust.id,
+                external_ref=f"MND{rng2.randint(100000, 1099999)}",
+                rail=rail,
+                status=status,
+                max_amount_paise=cap,
+                sequence_number=rng2.randint(1, 3),
+                attempts_used=rng2.randint(0, 2),
+                last_pdn_sent_at=_now - _td(hours=rng2.randint(5, 48)) if rng2.random() < 0.7 else None,
+                registered_at=_now - _td(days=rng2.randint(10, 400)),
+                revoked_at=_now - _td(days=rng2.randint(1, 10)) if status == MandateStatus.REVOKED else None,
+            )
+            mandates.append(m)
+            mandat_by_customer[cust.id] = m
+    if mandates:
+        session.add_all(mandates)
+        await session.flush()
+        # Link subscription/payment events to mandates where applicable
+        for ev in dataset.events:
+            if ev.kind in ("subscription_failure", "payment_failure") and ev.customer_id in mandat_by_customer:
+                if rng2.random() < 0.6:
+                    ev.mandate_id = mandat_by_customer[ev.customer_id].id
     session.add_all(dataset.events)
     session.add_all([RouteHealthBucket(**bucket) for bucket in buckets])
     await session.flush()

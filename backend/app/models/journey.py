@@ -44,6 +44,8 @@ class RecoveryJourney(Base, TimestampMixin):
     retries_used: Mapped[int] = mapped_column(Integer, default=0)
     discounts_used: Mapped[int] = mapped_column(Integer, default=0)
     voice_used: Mapped[int] = mapped_column(Integer, default=0)
+    npci_attempts_used: Mapped[int] = mapped_column(Integer, default=0)
+    futile_retries_prevented: Mapped[int] = mapped_column(Integer, default=0)
 
     recovered_amount_paise: Mapped[int] = mapped_column(Integer, default=0)
     cost_paise: Mapped[int] = mapped_column(Integer, default=0)

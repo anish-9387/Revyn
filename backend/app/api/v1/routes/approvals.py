@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 from sqlalchemy import select
 
-from app.api.deps import SessionDep
+from app.api.deps import ApiKeyDep, SessionDep
 from app.core.constants import ActionStatus
 from app.models.journey import Decision, RecoveryAction
 from app.schemas.read import ActionRead, ApprovalItem, DecisionRead, RiskItem
@@ -45,7 +45,7 @@ async def pending(session: SessionDep) -> list[ApprovalItem]:
 
 
 @router.post("/{action_id}/approve", response_model=ActionRead)
-async def approve(session: SessionDep, action_id: str, payload: ApprovalRequest) -> ActionRead:
+async def approve(session: SessionDep, action_id: str, payload: ApprovalRequest, _auth: ApiKeyDep = None) -> ActionRead:  # type: ignore[assignment]
     action = await orchestrator.approve_action(
         session, action_id, approver=payload.approver, note=payload.note
     )
@@ -53,7 +53,7 @@ async def approve(session: SessionDep, action_id: str, payload: ApprovalRequest)
 
 
 @router.post("/{action_id}/reject", response_model=ActionRead)
-async def reject(session: SessionDep, action_id: str, payload: RejectionRequest) -> ActionRead:
+async def reject(session: SessionDep, action_id: str, payload: RejectionRequest, _auth: ApiKeyDep = None) -> ActionRead:  # type: ignore[assignment]
     action = await orchestrator.reject_action(
         session, action_id, approver=payload.approver, reason=payload.reason
     )

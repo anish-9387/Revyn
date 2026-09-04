@@ -77,6 +77,13 @@ class FailureCode(StrEnum):
     METHOD_UNAVAILABLE = "method_unavailable"
     INVOICE_UNPAID = "invoice_unpaid"
     PROMISE_BROKEN = "promise_broken"
+    # Regulatory / mandate
+    MANDATE_NOT_FOUND = "mandate_not_found"
+    MANDATE_REVOKED = "mandate_revoked"
+    MANDATE_AMOUNT_EXCEEDS = "mandate_amount_exceeds"
+    PDN_NOT_DELIVERED = "pdn_not_delivered"
+    AFA_REQUIRED = "afa_required"
+    MANDATE_PAUSED = "mandate_paused"
 
 
 class CauseLayer(StrEnum):
@@ -86,6 +93,7 @@ class CauseLayer(StrEnum):
     SYSTEMIC = "systemic"
     INTENT = "intent"
     RECEIVABLE = "receivable"
+    REGULATORY = "regulatory"
 
 
 class RootCause(StrEnum):
@@ -106,6 +114,12 @@ class RootCause(StrEnum):
     BUYER_CASHFLOW = "buyer_cashflow"
     APPROVAL_BOTTLENECK = "approval_bottleneck"
     DISPUTED_INVOICE = "disputed_invoice"
+    MANDATE_ABSENT = "mandate_absent"
+    MANDATE_REVOKED = "mandate_revoked"
+    MANDATE_CAP_EXCEEDED = "mandate_cap_exceeded"
+    PDN_MISSING = "pdn_missing"
+    AFA_THRESHOLD_BREACH = "afa_threshold_breach"
+    EXECUTION_WINDOW_MISS = "execution_window_miss"
     UNKNOWN = "unknown"
 
 
@@ -121,6 +135,10 @@ class ActionType(StrEnum):
     DISCOUNT = "discount"
     HUMAN_ESCALATION = "human_escalation"
     PROMISE_FOLLOWUP = "promise_followup"
+    REREGISTER_MANDATE = "reregister_mandate"
+    AMEND_MANDATE_CAP = "amend_mandate_cap"
+    SEND_PDN = "send_pdn"
+    SWITCH_RAIL = "switch_rail"
 
 
 # Actions that consume a slot of the customer contact budget.
@@ -133,12 +151,22 @@ CONTACT_ACTIONS: frozenset[ActionType] = frozenset(
         ActionType.VOICE,
         ActionType.DISCOUNT,
         ActionType.PROMISE_FOLLOWUP,
+        ActionType.REREGISTER_MANDATE,
+        ActionType.AMEND_MANDATE_CAP,
+        ActionType.SEND_PDN,
+        ActionType.SWITCH_RAIL,
     }
 )
 
 # Actions that move money through the payment gateway.
 FINANCIAL_ACTIONS: frozenset[ActionType] = frozenset(
-    {ActionType.RETRY_PAYMENT, ActionType.PAYMENT_LINK, ActionType.ALT_PAYMENT_METHOD}
+    {
+        ActionType.RETRY_PAYMENT,
+        ActionType.PAYMENT_LINK,
+        ActionType.ALT_PAYMENT_METHOD,
+        ActionType.REREGISTER_MANDATE,
+        ActionType.AMEND_MANDATE_CAP,
+    }
 )
 
 
@@ -208,6 +236,25 @@ class PolicyRule(StrEnum):
     DEGRADATION_ACTIVE = "degradation_active"
     DUPLICATE_ACTION = "duplicate_action"
     COLLISION_DETECTED = "collision_detected"
+    RETRY_FUTILE = "retry_futile"
+    NPCI_BUDGET_EXHAUSTED = "npci_budget_exhausted"
+    OUTSIDE_EXECUTION_WINDOW = "outside_execution_window"
+    PDN_PRECONDITION_UNMET = "pdn_precondition_unmet"
+    FIRST_PRESENTATION_GUARD = "first_presentation_guard"
+
+
+class MandateRail(StrEnum):
+    UPI_AUTOPAY = "upi_autopay"
+    CARD_EMANDATE = "card_emandate"
+    NACH = "nach"
+
+
+class MandateStatus(StrEnum):
+    ACTIVE = "active"
+    REVOKED = "revoked"
+    PAUSED = "paused"
+    EXPIRED = "expired"
+    PENDING_REGISTRATION = "pending_registration"
 
 
 class GatewayStatus(StrEnum):

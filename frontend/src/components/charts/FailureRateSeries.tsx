@@ -39,7 +39,7 @@ export function FailureRateSeries({
 
   return (
     <ChartFrame
-      title={`Failure rate — ${label}`}
+      title={`Failure rate - ${label}`}
       hint={`Dashed line is the 7-day baseline for this ${kind} (${pct(baseline, 1)}). Attempts are in the tooltip, because a rate without a denominator can be a traffic dip.`}
       legend={[
         { label: "Observed failure rate", colour: "var(--series-2)" },
