@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 venv/
-venv/
+.venv/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
@@ -14,13 +14,24 @@ venv/
 backend/app/ml/artifacts/*
 !backend/app/ml/artifacts/.gitkeep
 backend/data_out/
+backend/revyn.db
 
 # Node
 node_modules/
 .next/
 out/
+dist/
 *.tsbuildinfo
 .turbo/
+.pnpm-store/
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+install.log
+*.log
 
 # Env
 .env
@@ -30,8 +41,17 @@ out/
 # Editor / OS
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 .DS_Store
 Thumbs.db
 
-# Next.js generated type shim
+# Next.js
 next-env.d.ts
+
+# Coverage
+coverage/
+.nyc_output/
+.coverage
+htmlcov/

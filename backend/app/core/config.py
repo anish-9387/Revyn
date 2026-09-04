@@ -30,12 +30,11 @@ class Settings(BaseSettings):
 
     # LLM. Revyn degrades to a deterministic reasoning provider when unavailable.
     llm_enabled: bool = True
-    llm_model: str = "claude-opus-5"
+    llm_model: str = "claude-sonnet-4-20250514"
     llm_effort: Literal["low", "medium", "high", "xhigh", "max"] = "low"
     llm_max_tokens: int = 4096
     llm_timeout_seconds: float = 45.0
-    # Server-side rescue if a request is declined by a safety classifier.
-    llm_fallback_model: str = "claude-opus-4-8"
+    llm_fallback_model: str | None = None
     # Cap narrative refinement per scan cycle: the top opportunities get it, the rest
     # fall back to the deterministic path.
     llm_max_events_per_scan: int = 5

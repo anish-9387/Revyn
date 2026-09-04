@@ -38,8 +38,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {error ? <ErrorNote message={error} /> : null}
             {children}
           </main>
-          <footer className="border-t border-hairline/60 px-4 py-4 text-center text-[11px] text-muted sm:px-5 lg:px-7">
-            <span className="inline-flex items-center gap-2">© {new Date().getFullYear()} Revyn · Revenue recovery, supervised · <span className="h-1.5 w-1.5 rounded-full bg-good animate-pulse" aria-hidden /> All systems nominal</span>
+          <footer className="border-t border-hairline/60 px-4 py-4 text-center text-[11px] text-muted sm:px-5 lg:px-7" suppressHydrationWarning>
+            <span className="inline-flex items-center gap-2">© 2026 Revyn · Revenue recovery, supervised · <span className="h-1.5 w-1.5 rounded-full bg-good animate-pulse" aria-hidden /> All systems nominal</span>
           </footer>
         </div>
       </div>

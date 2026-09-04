@@ -1,13 +1,24 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { IconButton } from "@/components/ui/Button";
 import { applyTheme, readTheme, serverTheme, subscribeTheme } from "@/lib/theme";
 
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribeTheme, readTheme, serverTheme);
+  const [mounted, setMounted] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMounted(true), []);
+
   const next = theme === "dark" ? "light" : "dark";
+  if (!mounted) {
+    return (
+      <IconButton label="Toggle theme" className="rounded-full opacity-0" aria-hidden>
+        <span className="h-5 w-5" />
+      </IconButton>
+    );
+  }
   return (
     <IconButton label={`Switch to ${next} theme`} onClick={() => applyTheme(next)} className="rounded-full">
       <span aria-hidden className="grid h-5 w-5 place-items-center">

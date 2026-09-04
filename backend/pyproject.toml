@@ -12,7 +12,7 @@ dependencies = [
   "aiosqlite==0.22.1",
   "greenlet==3.5.5",
   "httpx==0.28.1",
-  "anthropic==1.2.0",
+  "anthropic>=0.39.0,<2",
   "numpy==2.5.2",
   "scikit-learn==1.9.0",
   "joblib==1.6.0",
@@ -43,9 +43,9 @@ select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
 ignore = ["B008"]
 
 [tool.ruff.lint.per-file-ignores]
-# Prompt and catalog copy is prose: line breaks there change what the model reads.
 "app/integrations/llm/prompts.py" = ["E501"]
 "app/data/catalog.py" = ["E501"]
+"app/integrations/llm/anthropic_provider.py" = ["E501"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
