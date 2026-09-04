@@ -1,5 +1,8 @@
 "use client";
 
+const INPUT =
+  "hairline rounded-lg bg-raised px-3 text-[13px] text-ink transition-colors placeholder:text-muted hover:border-hairline-strong focus:border-series-1";
+
 export function NumberField({
   label,
   hint,
@@ -22,7 +25,7 @@ export function NumberField({
   return (
     <label className="block">
       <span className="text-xs font-medium text-ink-2">{label}</span>
-      <span className="mt-1 flex items-center gap-2">
+      <span className="mt-1.5 flex items-center gap-2">
         <input
           type="number"
           value={value}
@@ -30,11 +33,11 @@ export function NumberField({
           max={max}
           step={step}
           onChange={(event) => onChange(Number(event.target.value))}
-          className="hairline w-full rounded-md bg-raised px-2.5 py-1.5 text-sm tabular-nums text-ink"
+          className={`${INPUT} num h-10 w-full sm:h-9`}
         />
         {suffix ? <span className="text-xs whitespace-nowrap text-muted">{suffix}</span> : null}
       </span>
-      {hint ? <span className="mt-1 block text-[11px] leading-relaxed text-muted">{hint}</span> : null}
+      {hint ? <span className="mt-1.5 block text-[11px] leading-relaxed text-muted">{hint}</span> : null}
     </label>
   );
 }
@@ -65,14 +68,16 @@ export function Toggle({
         aria-label={label}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={`mt-0.5 h-5 w-9 shrink-0 rounded-full border transition disabled:opacity-45 ${
+        className={`press mt-0.5 flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200 disabled:opacity-45 ${
           checked ? "border-series-1 bg-series-1" : "border-hairline bg-grid"
         }`}
       >
         <span
-          className={`block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
-            checked ? "translate-x-4" : "translate-x-0.5"
-          }`}
+          className="block h-4 w-4 rounded-full bg-white shadow-soft transition-transform duration-300"
+          style={{
+            transform: `translateX(${checked ? 22 : 3}px)`,
+            transitionTimingFunction: "var(--ease-spring)",
+          }}
         />
       </button>
     </label>
@@ -92,18 +97,23 @@ export function Select({
 }) {
   return (
     <label className="flex items-center gap-2 text-xs">
-      <span className="text-muted">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="hairline rounded-md bg-raised px-2 py-1 text-xs text-ink"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <span className="whitespace-nowrap text-muted">{label}</span>
+      <span className="relative inline-flex items-center">
+        <select
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className={`${INPUT} h-9 cursor-pointer appearance-none pr-7`}
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <span aria-hidden className="pointer-events-none absolute right-2.5 text-[8px] text-muted">
+          ▼
+        </span>
+      </span>
     </label>
   );
 }

@@ -5,8 +5,8 @@ import { useMemo } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardHead, PageHead } from "@/components/ui/Card";
 import { DataTable } from "@/components/ui/DataTable";
-import { Resource } from "@/components/ui/State";
 import { ShareBar } from "@/components/ui/Meter";
+import { Resource } from "@/components/ui/State";
 import { api } from "@/lib/api";
 import { compact, inr, pct, titleCase } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
@@ -62,6 +62,7 @@ export default function Playbook() {
                   label={`${actionLabel(row.action)} · ${compact(row.trials)} tries`}
                   value={pct(row.rate, 1)}
                   share={row.rate}
+                  showShare={false}
                   colour={row.rate >= 0.5 ? "var(--good)" : row.rate >= 0.25 ? "var(--series-4)" : "var(--serious)"}
                 />
               ))}
@@ -86,7 +87,7 @@ export default function Playbook() {
           <p className="mt-3 border-t border-hairline pt-3 text-[11px] leading-relaxed text-muted">
             A segment is only trusted once it has{" "}
             <span className="tabular-nums text-ink-2">{playbook.data?.min_trials_for_confidence ?? 0}</span> trials.
-            Below that Revyn falls back to the model rather than to a small-sample hunch.
+            Below that Revyn uses broader benchmarks rather than a small-sample hunch.
           </p>
         </Card>
       </div>

@@ -44,6 +44,11 @@ class ScopeHealth:
     def degraded(self) -> bool:
         return self.severity in (DegradationSeverity.ELEVATED, DegradationSeverity.CRITICAL)
 
+    @property
+    def scored(self) -> bool:
+        """Below the attempt floor a rate is noise, so severity is withheld rather than raised."""
+        return self.attempts >= MIN_RECENT_ATTEMPTS
+
     def as_dict(self) -> dict:
         return {
             "scope_type": self.scope_type,
@@ -55,6 +60,7 @@ class ScopeHealth:
             "ratio": round(self.ratio, 2),
             "severity": str(self.severity),
             "degraded": self.degraded,
+            "scored": self.scored,
         }
 
 
@@ -240,21 +246,35 @@ async def active_window_summary(session: AsyncSession) -> list[DegradationWindow
     return list((await session.execute(stmt)).scalars().all())
 
 
-async def failure_rate_series(session: AsyncSession, route: str, *, hours: int = 6) -> list[dict]:
-    """Fifteen-minute failure-rate points for the incident chart."""
+async def failure_rate_series(
+    session: AsyncSession, value: str, *, scope: str = "route", hours: int = 6
+) -> list[dict]:
+    """Fifteen-minute failure-rate points for the incident chart, per route or per method.
+
+    A method spans several routes, so buckets are summed per interval rather than read
+    row by row: otherwise one interval would emit one partial point per route.
+    """
     since = utcnow() - timedelta(hours=hours)
+    column = RouteHealthBucket.method if scope == "method" else RouteHealthBucket.route
     stmt = (
-        select(RouteHealthBucket)
-        .where(RouteHealthBucket.route == route, RouteHealthBucket.bucket_start >= since)
+        select(
+            RouteHealthBucket.bucket_start,
+            func.sum(RouteHealthBucket.attempts),
+            func.sum(RouteHealthBucket.failures),
+        )
+        .where(column == value, RouteHealthBucket.bucket_start >= since)
+        .group_by(RouteHealthBucket.bucket_start)
         .order_by(RouteHealthBucket.bucket_start)
     )
-    buckets = (await session.execute(stmt)).scalars().all()
-    return [
-        {
-            "at": as_utc(bucket.bucket_start).isoformat(),
-            "attempts": bucket.attempts,
-            "failures": bucket.failures,
-            "failure_rate": round(bucket.failure_rate, 4),
-        }
-        for bucket in buckets
-    ]
+    points = []
+    for bucket_start, attempts, failures in (await session.execute(stmt)).all():
+        attempts, failures = int(attempts or 0), int(failures or 0)
+        points.append(
+            {
+                "at": as_utc(bucket_start).isoformat(),
+                "attempts": attempts,
+                "failures": failures,
+                "failure_rate": round(failures / attempts, 4) if attempts else 0.0,
+            }
+        )
+    return points

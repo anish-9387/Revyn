@@ -1,19 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { DecisionPanel } from "@/components/domain/DecisionPanel";
 import { Badge } from "@/components/ui/Badge";
+import { IconButton } from "@/components/ui/Button";
 import { Card, CardHead, PageHead } from "@/components/ui/Card";
 import { DataTable } from "@/components/ui/DataTable";
 import { Select } from "@/components/ui/Field";
 import { Pager } from "@/components/ui/Pager";
-import { Resource, Spinner } from "@/components/ui/State";
+import { Resource, SkeletonBlock } from "@/components/ui/State";
 import { api } from "@/lib/api";
 import { useResource } from "@/lib/hooks";
 import { compact, inr, pct, relativeTime, titleCase } from "@/lib/format";
-import { causeLabel, JOURNEY_TONE, LOSS_CLASS_LABEL, LOSS_CLASS_ORDER, LOSS_CLASS_SHORT } from "@/lib/labels";
+import { causeLabel, failureCodeLabel, JOURNEY_TONE, LOSS_CLASS_LABEL, LOSS_CLASS_ORDER, LOSS_CLASS_SHORT, methodLabel, termLabel } from "@/lib/labels";
 import { href } from "@/lib/routes";
 import type { RiskItem } from "@/lib/types";
 
@@ -86,7 +87,7 @@ export default function RiskRadar() {
                       <span>
                         <span className="text-ink">{row.customer.name}</span>
                         <span className="block text-[11px] text-muted">
-                          {titleCase(row.customer.segment)} · LTV {inr(row.customer.ltv_paise)}
+                          {termLabel(row.customer.segment)} · LTV {inr(row.customer.ltv_paise)}
                         </span>
                       </span>
                     ),
@@ -99,7 +100,7 @@ export default function RiskRadar() {
                         <span className="text-ink">{causeLabel(row.root_cause)}</span>
                         <span className="block text-[11px] text-muted">
                           {pct(row.cause_confidence, 0)} confidence
-                          {row.failure_code ? ` · ${row.failure_code}` : ""}
+                          {row.failure_code ? ` · ${failureCodeLabel(row.failure_code)}` : ""}
                         </span>
                       </span>
                     ),
@@ -159,30 +160,38 @@ export default function RiskRadar() {
 
 function FocusPanel({ item, onClose }: { item: RiskItem; onClose: () => void }) {
   const decisions = useResource(() => api.riskDecisions(item.id), { deps: [item.id] });
+  const anchor = useRef<HTMLDivElement>(null);
+
+  // Opening a row appends the panel below a long table; bring it to the reader instead.
+  useEffect(() => {
+    anchor.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [item.id]);
 
   return (
-    <Card>
-      <CardHead
-        title={`${item.external_ref} — ${LOSS_CLASS_LABEL[item.kind]}`}
-        hint={`${inr(item.amount_paise, { precise: true })} · ${item.payment_method} via ${item.route} · ${
-          item.failure_reason ?? "no gateway message"
-        }`}
-        actions={
-          <button onClick={onClose} className="text-xs text-muted hover:text-ink">
-            close
-          </button>
-        }
-      />
-      {decisions.loading ? (
-        <Spinner label="Loading decision" />
-      ) : decisions.data && decisions.data.length > 0 ? (
-        <DecisionPanel decision={decisions.data[0]} />
-      ) : (
-        <p className="text-xs text-muted">
-          No decision recorded yet — this event has been scored but not planned. Run one cycle to let the agents
-          pick it up.
-        </p>
-      )}
-    </Card>
+    <div ref={anchor} className="scroll-mt-20">
+      <Card>
+        <CardHead
+          title={`${item.external_ref} — ${LOSS_CLASS_LABEL[item.kind]}`}
+          hint={`${inr(item.amount_paise, { precise: true })} · ${methodLabel(item.payment_method)} via ${item.route} · ${
+            item.failure_reason ?? "no payment message"
+          }`}
+          actions={
+            <IconButton label="Close event detail" onClick={onClose}>
+              ✕
+            </IconButton>
+          }
+        />
+        {decisions.loading ? (
+          <SkeletonBlock label="Loading decision" />
+        ) : decisions.data && decisions.data.length > 0 ? (
+          <DecisionPanel decision={decisions.data[0]} />
+        ) : (
+          <p className="text-xs text-muted">
+            No decision recorded yet — this event has been scored but not planned. Run one cycle to let the
+            agents pick it up.
+          </p>
+        )}
+      </Card>
+    </div>
   );
 }

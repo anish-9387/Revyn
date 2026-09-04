@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHead, PageHead } from "@/components/ui/Card";
 import { NumberField, Toggle } from "@/components/ui/Field";
-import { ErrorNote, Spinner } from "@/components/ui/State";
+import { ErrorNote, SkeletonBlock } from "@/components/ui/State";
 import { KeyValue } from "@/components/ui/StatTile";
 import { api } from "@/lib/api";
 import { dateTime, inr, pct } from "@/lib/format";
@@ -30,7 +30,7 @@ export default function Policies() {
     setDraft(policy.data);
   }
 
-  if (!draft) return policy.error ? <ErrorNote message={policy.error} onRetry={policy.refresh} /> : <Spinner />;
+  if (!draft) return policy.error ? <ErrorNote message={policy.error} onRetry={policy.refresh} /> : <SkeletonBlock panel />;
 
   const set = <K extends keyof Policy>(key: K, value: Policy[K]) =>
     setDraft((current) => (current ? { ...current, [key]: value } : current));
@@ -56,7 +56,7 @@ export default function Policies() {
     <>
       <PageHead
         title="Guardrails"
-        hint="Every limit here is enforced in code before an action can execute. The reasoning model can recommend, but it cannot widen these."
+        hint="Every limit here is enforced in code before an action can execute. Nothing downstream can widen them at run time."
         actions={
           <>
             {changed.length > 0 ? (
@@ -95,7 +95,7 @@ export default function Policies() {
             items={[
               ["Policy", `${draft.name} · v${draft.version}`],
               ["Last changed", dateTime(draft.updated_at)],
-              ["Paused", draft.paused ? "yes" : "no"],
+              ["Paused", draft.paused ? "Yes" : "No"],
             ]}
           />
         </div>

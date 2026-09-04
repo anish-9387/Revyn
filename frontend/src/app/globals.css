@@ -1,22 +1,27 @@
 @import "tailwindcss";
 
-/*
- * Design tokens. Dark is the default surface for an operations console; the light
- * steps are separately chosen for the light surface rather than flipped, and both
- * sets were validated for colour-vision separation and contrast.
- */
 :root {
   color-scheme: dark;
-  --plane: #0d0d0d;
-  --surface: #1a1a19;
-  --raised: #212120;
-  --ink: #ffffff;
-  --ink-2: #c3c2b7;
-  --muted: #898781;
-  --grid: #2c2c2a;
-  --axis: #383835;
-  --hairline: rgba(255, 255, 255, 0.1);
-
+  --plane: #0a0a0c;
+  --surface: #131317;
+  --raised: #1b1b21;
+  --elevated: #23232b;
+  --ink: #f7f7f8;
+  --ink-2: #b9b9c3;
+  --muted: #87878f;
+  --grid: #26262c;
+  --axis: #3b3b44;
+  --hairline: rgba(255, 255, 255, 0.09);
+  --hairline-strong: rgba(255, 255, 255, 0.15);
+  --hairline-glow: rgba(255, 255, 255, 0.06);
+  --sheen: rgba(255, 255, 255, 0.06);
+  --aurora-1: rgba(57, 135, 229, 0.14);
+  --aurora-2: rgba(144, 133, 233, 0.10);
+  --aurora-3: rgba(25, 158, 112, 0.06);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.40), 0 1px 3px rgba(0,0,0,0.12);
+  --shadow-2: 0 8px 28px -10px rgba(0, 0, 0, 0.60), 0 4px 12px -4px rgba(0,0,0,0.35);
+  --shadow-3: 0 20px 56px -20px rgba(0, 0, 0, 0.75), 0 8px 20px -8px rgba(0,0,0,0.4);
+  --shadow-inset: inset 0 1px 0 rgba(255,255,255,0.04);
   --series-1: #3987e5;
   --series-2: #d95926;
   --series-3: #199e70;
@@ -25,26 +30,36 @@
   --series-6: #008300;
   --series-7: #9085e9;
   --series-8: #e66767;
-
-  --good: #0ca30c;
+  --good: #16b016;
   --warning: #fab219;
   --serious: #ec835a;
-  --critical: #d03b3b;
-  --delta-up: #0ca30c;
+  --critical: #e04b4b;
+  --delta-up: #21bd52;
+  --ring: rgba(57,135,229,0.38);
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --plane: #f9f9f7;
-  --surface: #fcfcfb;
-  --raised: #ffffff;
-  --ink: #0b0b0b;
-  --ink-2: #52514e;
-  --muted: #898781;
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
-  --hairline: rgba(11, 11, 11, 0.1);
-
+  --plane: #f5f6f8;
+  --surface: #ffffff;
+  --raised: #f2f3f6;
+  --elevated: #ffffff;
+  --ink: #0d0e12;
+  --ink-2: #4b4d57;
+  --muted: #71737e;
+  --grid: #e6e8ec;
+  --axis: #c4c7cf;
+  --hairline: rgba(13, 14, 18, 0.08);
+  --hairline-strong: rgba(13, 14, 18, 0.14);
+  --hairline-glow: rgba(13,14,18,0.04);
+  --sheen: rgba(13, 14, 18, 0.03);
+  --aurora-1: rgba(42, 120, 214, 0.10);
+  --aurora-2: rgba(74, 58, 167, 0.07);
+  --aurora-3: rgba(27,175,122,0.05);
+  --shadow-1: 0 1px 2px rgba(13, 14, 18, 0.06), 0 1px 3px rgba(13,14,18,0.04);
+  --shadow-2: 0 10px 28px -12px rgba(13, 14, 18, 0.16), 0 4px 10px -4px rgba(13,14,18,0.08);
+  --shadow-3: 0 20px 56px -24px rgba(13, 14, 18, 0.18), 0 8px 18px -8px rgba(13,14,18,0.10);
+  --shadow-inset: inset 0 1px 0 rgba(255,255,255,0.7);
   --series-1: #2a78d6;
   --series-2: #eb6834;
   --series-3: #1baf7a;
@@ -53,21 +68,26 @@
   --series-6: #008300;
   --series-7: #4a3aa7;
   --series-8: #e34948;
-
-  --delta-up: #006300;
+  --good: #0c8a0c;
+  --warning: #b07800;
+  --serious: #c85a2a;
+  --critical: #cc2f2f;
+  --delta-up: #0a7d2f;
+  --ring: rgba(42,120,214,0.30);
 }
 
 @theme inline {
   --color-plane: var(--plane);
   --color-surface: var(--surface);
   --color-raised: var(--raised);
+  --color-elevated: var(--elevated);
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-muted: var(--muted);
   --color-grid: var(--grid);
   --color-axis: var(--axis);
   --color-hairline: var(--hairline);
-
+  --color-hairline-strong: var(--hairline-strong);
   --color-series-1: var(--series-1);
   --color-series-2: var(--series-2);
   --color-series-3: var(--series-3);
@@ -76,55 +96,147 @@
   --color-series-6: var(--series-6);
   --color-series-7: var(--series-7);
   --color-series-8: var(--series-8);
-
   --color-good: var(--good);
   --color-warning: var(--warning);
   --color-serious: var(--serious);
   --color-critical: var(--critical);
   --color-delta-up: var(--delta-up);
-
-  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Inter", "Segoe UI Variable Display", "Segoe UI", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+  --font-display: "Fraunces", var(--font-sans);
+  --radius-card: 1rem;
+  --radius-tile: 0.875rem;
+  --radius-pill: 9999px;
+  --shadow-soft: var(--shadow-1);
+  --shadow-lift: var(--shadow-2);
+  --shadow-float: var(--shadow-3);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-swift: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-rise: rise 0.5s var(--ease-spring) both;
+  --animate-fade: fade 0.35s var(--ease-swift) both;
+  --animate-pop: pop 0.36s var(--ease-spring) both;
+  --animate-sheen: sheen 1.6s linear infinite;
+  --animate-drawer: drawer 0.30s var(--ease-swift) both;
+  --animate-drawer-out: drawerOut 0.25s var(--ease-swift) both;
+  --animate-grow: grow 0.7s var(--ease-spring) both;
+  --animate-pulse-subtle: pulseSubtle 2.2s ease-in-out infinite;
 }
 
-@layer base {
-  html {
-    background: var(--plane);
-  }
+@keyframes rise { from { opacity:0; transform:translate3d(0,12px,0); } to { opacity:1; transform:none; } }
+@keyframes fade { from{opacity:0} to{opacity:1} }
+@keyframes pop { from{opacity:0; transform:scale(0.96) translateY(4px)} to{opacity:1; transform:none} }
+@keyframes sheen { from{background-position:-160% 0} to{background-position:260% 0} }
+@keyframes drawer { from{transform:translate3d(-100%,0,0)} to{transform:none} }
+@keyframes drawerOut { from{transform:none} to{transform:translate3d(-100%,0,0)} }
+@keyframes grow { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+@keyframes pulseSubtle { 0%,100%{opacity:1} 50%{opacity:0.86} }
+@keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
 
+@layer base {
+  html { background: var(--plane); scroll-behavior: smooth; scrollbar-gutter: stable; }
   body {
     background: var(--plane);
     color: var(--ink);
     font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv02","cv03","cv08","cv09";
   }
-
-  ::selection {
-    background: color-mix(in oklab, var(--series-1) 40%, transparent);
+  body::before {
+    content:"";
+    position:fixed;
+    inset:-22% -12% auto -12%;
+    height:66vh;
+    pointer-events:none;
+    z-index:0;
+    background:
+      radial-gradient(58% 68% at 16% 2%, var(--aurora-1), transparent 68%),
+      radial-gradient(52% 56% at 84% 10%, var(--aurora-2), transparent 70%),
+      radial-gradient(42% 48% at 50% 0%, var(--aurora-3), transparent 72%);
+    opacity:1;
   }
-
-  /* Recessive scrollbars: chrome should never compete with the data. */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: var(--axis) transparent;
-  }
-
-  :focus-visible {
-    outline: 2px solid var(--series-1);
-    outline-offset: 2px;
+  h1,h2,h3 { letter-spacing:-0.015em; font-weight:650; }
+  h1 { font-weight:700; letter-spacing:-0.02em; }
+  ::selection { background: color-mix(in oklab, var(--series-1) 32%, transparent); color: var(--ink); }
+  * { scrollbar-width: thin; scrollbar-color: var(--axis) transparent; }
+  *::-webkit-scrollbar { width:6px; height:6px; }
+  *::-webkit-scrollbar-thumb { background: var(--axis); border-radius:999px; border:1px solid transparent; background-clip:content-box; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  :focus-visible { outline:2px solid var(--series-1); outline-offset:2px; border-radius:8px; box-shadow:0 0 0 4px var(--ring); }
+  input,select,button,textarea { font:inherit; }
+  a { text-underline-offset:2px; }
+  @media (prefers-reduced-motion: reduce) {
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important}
   }
 }
 
-@utility hairline {
-  border: 1px solid var(--hairline);
+@utility hairline { border:1px solid var(--hairline); }
+@utility panel {
+  position:relative;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 96%, white 4%), var(--surface));
+  border:1px solid var(--hairline);
+  box-shadow: var(--shadow-1), var(--shadow-inset);
+  backdrop-filter: saturate(1.02);
 }
+@utility panel-sheen {
+  &::after{
+    content:"";
+    position:absolute;
+    inset:0 0 auto 0;
+    height:1px;
+    border-radius:inherit;
+    background: linear-gradient(90deg, transparent, var(--hairline-strong) 20%, var(--hairline-glow) 52%, transparent 84%);
+    pointer-events:none;
+  }
+}
+@utility glass {
+  background: color-mix(in oklab, var(--surface) 82%, transparent);
+  backdrop-filter: blur(16px) saturate(1.15);
+  border:1px solid color-mix(in oklab, var(--hairline) 88%, transparent);
+}
+@utility lift {
+  transition: transform 0.28s var(--ease-spring), box-shadow 0.28s var(--ease-spring), border-color 0.28s var(--ease-spring), background 0.28s var(--ease-spring);
+  &:hover{ transform:translateY(-3px); box-shadow: var(--shadow-2); border-color: var(--hairline-strong); }
+}
+@utility press {
+  transition: transform 0.12s var(--ease-swift), filter 0.22s var(--ease-swift), opacity 0.18s var(--ease-swift);
+  &:active:not(:disabled){ transform:scale(0.985); }
+}
+@utility stagger {
+  & > *{ animation: rise 0.5s var(--ease-spring) both; }
+  & > *:nth-child(1){animation-delay:0ms}
+  & > *:nth-child(2){animation-delay:56ms}
+  & > *:nth-child(3){animation-delay:104ms}
+  & > *:nth-child(4){animation-delay:144ms}
+  & > *:nth-child(5){animation-delay:176ms}
+  & > *:nth-child(n+6){animation-delay:204ms}
+}
+@utility skeleton {
+  background: linear-gradient(90deg, var(--grid) 0%, var(--elevated) 46%, var(--grid) 92%) 0 0 / 220% 100%;
+  animation: sheen 1.6s linear infinite;
+  position:relative; overflow:hidden;
+  &::after{ content:""; position:absolute; inset:0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent); animation: shimmer 1.8s ease-in-out infinite; }
+}
+@utility num { font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; letter-spacing:-0.02em; }
+@utility focus-ring { &:focus-visible{ outline:2px solid var(--series-1); outline-offset:2px; box-shadow:0 0 0 4px var(--ring); } }
 
-/* Tooltip surface shared by every chart. */
-.viz-tooltip {
-  background: var(--raised);
-  border: 1px solid var(--hairline);
-  border-radius: 10px;
-  padding: 10px 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
-  font-size: 12px;
-  line-height: 1.45;
+.viz-tooltip{
+  background: color-mix(in oklab, var(--elevated) 94%, transparent);
+  backdrop-filter: blur(10px) saturate(1.1);
+  border:1px solid var(--hairline-strong);
+  border-radius:14px;
+  padding:10px 12px;
+  box-shadow: var(--shadow-2);
+  font-size:12px;
+  line-height:1.45;
+}
+.scroll-fade{ mask-image: linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%) }
+@media(min-width:768px){ .scroll-fade{mask-image:none} }
+
+@media (max-width: 640px){
+  body::before{ height:42vh; }
 }

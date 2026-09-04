@@ -7,14 +7,28 @@ import { useLive } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHead, PageHead } from "@/components/ui/Card";
 import { NumberField, Toggle } from "@/components/ui/Field";
-import { Spinner } from "@/components/ui/State";
+import { EmptyState, SkeletonBlock } from "@/components/ui/State";
 import { KeyValue } from "@/components/ui/StatTile";
 import { api } from "@/lib/api";
 import { compact, inr, pct } from "@/lib/format";
 import { useAction } from "@/lib/hooks";
+import { POLICY_FIELD_LABEL, termLabel } from "@/lib/labels";
 import type { SimulationArm, SimulationResult } from "@/lib/types";
 
 type Overrides = Record<string, number | boolean>;
+
+const rupees = (paise: number) => Math.round(paise / 100);
+const fieldLabel = (field: string) => POLICY_FIELD_LABEL[field] ?? termLabel(field);
+
+/** A changed field reads in the same units the form showed, not the paise the API speaks. */
+const moveValue = (field: string, raw: number | boolean | string) =>
+  typeof raw === "boolean"
+    ? raw
+      ? "on"
+      : "off"
+    : field.endsWith("_paise")
+      ? inr(Number(raw))
+      : String(raw);
 
 export default function Simulator() {
   const { policy, refresh } = useLive();
@@ -22,7 +36,7 @@ export default function Simulator() {
   const [result, setResult] = useState<SimulationResult | null>(null);
   const { pending, error, run } = useAction();
 
-  if (!policy) return <Spinner label="Loading the live policy" />;
+  if (!policy) return <SkeletonBlock panel label="Loading the live policy" />;
 
   const value = (field: keyof typeof policy) =>
     (draft[field] as number | boolean | undefined) ?? (policy[field] as number | boolean);
@@ -106,19 +120,21 @@ export default function Simulator() {
             />
             <NumberField
               label="Minimum expected value"
-              value={value("min_expected_value_paise") as number}
-              onChange={(next) => set("min_expected_value_paise", next)}
+              value={rupees(value("min_expected_value_paise") as number)}
+              onChange={(next) => set("min_expected_value_paise", next * 100)}
               min={0}
-              step={1000}
-              suffix="paise"
+              step={10}
+              suffix="₹"
+              hint={`Currently ${inr(value("min_expected_value_paise") as number)}.`}
             />
             <NumberField
               label="Human approval above"
-              value={value("human_approval_amount_paise") as number}
-              onChange={(next) => set("human_approval_amount_paise", next)}
+              value={rupees(value("human_approval_amount_paise") as number)}
+              onChange={(next) => set("human_approval_amount_paise", next * 100)}
               min={0}
-              step={10000}
-              suffix="paise"
+              step={500}
+              suffix="₹"
+              hint={`Currently ${inr(value("human_approval_amount_paise") as number)}.`}
             />
             <Toggle
               label="Hold retries during degradation"
@@ -135,13 +151,13 @@ export default function Simulator() {
         </Card>
 
         <div className="space-y-4">
-          {result ? <Outcome result={result} /> : (
-            <Card>
-              <p className="py-10 text-center text-xs text-muted">
-                Adjust the policy and run a simulation. Every open event is re-scored against the proposed
-                guardrails, alongside the legacy fixed-retry workflow for reference.
-              </p>
-            </Card>
+          {result ? (
+            <Outcome result={result} />
+          ) : (
+            <EmptyState
+              title="No simulation run yet"
+              hint="Every open event is re-scored against the proposed guardrails, alongside the legacy fixed-retry workflow for reference."
+            />
           )}
         </div>
       </div>
@@ -169,7 +185,7 @@ function Outcome({ result }: { result: SimulationResult }) {
             Object.keys(changed).length === 0
               ? "No fields changed yet — this is the live policy scored against itself."
               : Object.entries(changed)
-                  .map(([field, move]) => `${field}: ${move.from} → ${move.to}`)
+                  .map(([field, move]) => `${fieldLabel(field)}: ${moveValue(field, move.from)} → ${moveValue(field, move.to)}`)
                   .join("; ")
           }`}
         />

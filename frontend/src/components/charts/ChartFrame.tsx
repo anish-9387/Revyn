@@ -32,7 +32,7 @@ export function ChartFrame({
   const id = useId();
 
   return (
-    <figure className="hairline rounded-xl bg-surface p-4 sm:p-5">
+    <figure className="panel panel-sheen rounded-card p-4 sm:p-5">
       <figcaption className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold tracking-tight text-ink">{title}</h3>
@@ -46,7 +46,7 @@ export function ChartFrame({
               onClick={() => setShowTable((open) => !open)}
               aria-expanded={showTable}
               aria-controls={id}
-              className="hairline rounded-md bg-raised px-2 py-1 text-[11px] text-ink-2 hover:text-ink"
+              className="press hairline rounded-full bg-raised px-2.5 py-1 text-[11px] text-ink-2 transition-colors hover:border-hairline-strong hover:text-ink"
             >
               {showTable ? "Hide values" : "Values"}
             </button>
@@ -69,12 +69,15 @@ export function ChartFrame({
         </ul>
       ) : null}
 
-      <div style={height === "auto" ? undefined : { height }} className="w-full">
+      <div
+        className="w-full"
+        style={height === "auto" ? undefined : { height: `min(${height}px, max(190px, 58vw))` }}
+      >
         {children}
       </div>
 
       {table && showTable ? (
-        <div id={id} className="mt-4 border-t border-hairline pt-3">
+        <div id={id} className="animate-fade mt-4 border-t border-hairline pt-3">
           {table}
         </div>
       ) : null}

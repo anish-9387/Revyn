@@ -115,6 +115,8 @@ export interface AgentStep {
 export interface Decision {
   id: string;
   event_id: string;
+  event_ref: string | null;
+  amount_paise: number | null;
   journey_id: string | null;
   chosen_action: string;
   recovery_probability: number;
@@ -161,6 +163,9 @@ export interface PlanStep {
 export interface Journey {
   id: string;
   event_id: string;
+  event_ref: string | null;
+  amount_paise: number | null;
+  customer_name: string | null;
   customer_id: string;
   state: JourneyState;
   strategy_key: string;
@@ -256,7 +261,7 @@ export interface AbTest {
 }
 
 export interface ScopeHealth {
-  scope_type: string;
+  scope_type: "route" | "method";
   scope_value: string;
   attempts: number;
   failures: number;
@@ -265,6 +270,8 @@ export interface ScopeHealth {
   ratio: number;
   severity: "none" | "watch" | "elevated" | "critical";
   degraded: boolean;
+  /** False below the attempt floor: the ratio is real but too thin to call. */
+  scored: boolean;
 }
 
 export interface CalibrationBin {

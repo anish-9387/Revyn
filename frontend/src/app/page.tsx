@@ -6,9 +6,9 @@ import { AbCompare } from "@/components/charts/AbCompare";
 import { LeakageBars } from "@/components/charts/LeakageBars";
 import { useLive } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui/Badge";
-import { Card, CardHead, PageHead } from "@/components/ui/Card";
+import { Card, CardHead, CardLink, PageHead } from "@/components/ui/Card";
 import { DataTable } from "@/components/ui/DataTable";
-import { Spinner } from "@/components/ui/State";
+import { SkeletonBlock } from "@/components/ui/State";
 import { KeyValue, StatRow, StatTile } from "@/components/ui/StatTile";
 import { compact, inr, pct, relativeTime, titleCase } from "@/lib/format";
 import { ACTION_STATUS_TONE, actionLabel, causeLabel, JOURNEY_TONE, LOSS_CLASS_SHORT, SEVERITY_TONE } from "@/lib/labels";
@@ -17,7 +17,7 @@ import type { JourneyState } from "@/lib/types";
 
 export default function CommandCentre() {
   const { overview } = useLive();
-  if (!overview) return <Spinner label="Reading the revenue position" />;
+  if (!overview) return <SkeletonBlock panel rows={6} label="Reading the revenue position" />;
 
   const { safety, events, journeys, ab_test: ab } = overview;
   const recoveryRate = events.recovered + events.lost > 0
@@ -51,9 +51,9 @@ export default function CommandCentre() {
                 .join("; ")}
               . Retries on the affected scope are held back so Revyn does not burn attempts into a broken route.
             </p>
-            <Link href="/leakage" className="ml-auto text-xs text-series-1 underline underline-offset-2">
-              Inspect
-            </Link>
+            <span className="ml-auto">
+              <CardLink href="/leakage">Inspect</CardLink>
+            </span>
           </div>
         </Card>
       ) : null}
@@ -88,15 +88,13 @@ export default function CommandCentre() {
         <AbCompare test={ab} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHead
             title="Recovery workflows"
             hint="Every detected loss becomes a journey with an explicit state, so nothing sits in limbo."
             actions={
-              <Link href="/journeys" className="text-xs text-series-1 underline underline-offset-2">
-                Open
-              </Link>
+              <CardLink href="/journeys">Open</CardLink>
             }
           />
           <div className="flex flex-wrap gap-2">
@@ -116,9 +114,7 @@ export default function CommandCentre() {
             title="Safety"
             hint="An autonomous system that touches money is judged on what it did not do."
             actions={
-              <Link href="/audit" className="text-xs text-series-1 underline underline-offset-2">
-                Audit trail
-              </Link>
+              <CardLink href="/audit">Audit trail</CardLink>
             }
           />
           <KeyValue
@@ -138,7 +134,6 @@ export default function CommandCentre() {
               ],
               ["Blocked by policy", compact(safety.policy_blocks)],
               ["Rejected by a human", compact(safety.rejected_actions)],
-              ["Clock speed-up", `${overview.runtime.clock_speedup.toFixed(0)}x`],
             ]}
           />
         </Card>
@@ -149,9 +144,7 @@ export default function CommandCentre() {
           title="Highest-value opportunities"
           hint="Ranked by expected recovery, not by amount — a large hopeless invoice loses to a mid-size retry that will land."
           actions={
-            <Link href="/radar" className="text-xs text-series-1 underline underline-offset-2">
-              Full radar
-            </Link>
+            <CardLink href="/radar">Full radar</CardLink>
           }
         />
         <DataTable

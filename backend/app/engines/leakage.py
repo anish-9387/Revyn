@@ -12,9 +12,9 @@ from dataclasses import dataclass
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.constants import EventStatus, RootCause
+from app.core.constants import EventStatus, PaymentMethod, RootCause
 from app.core.money import format_inr
-from app.data.catalog import FAILURE_LABELS, cause_profile
+from app.data.catalog import FAILURE_LABELS, METHOD_LABELS, cause_profile
 from app.engines.features import IST_OFFSET_HOURS
 from app.models.event import RevenueEvent
 
@@ -67,6 +67,13 @@ def _cause_label(cause: str) -> str:
     return cause_profile(RootCause(cause)).label
 
 
+def _method_label(method: str) -> str:
+    try:
+        return METHOD_LABELS[PaymentMethod(method)]
+    except ValueError:
+        return str(method)
+
+
 def _failure_label(code: str | None) -> str:
     if not code:
         return "Not applicable"
@@ -83,15 +90,15 @@ async def hourly_profile(session: AsyncSession) -> list[dict]:
     stmt = select(RevenueEvent.occurred_at, RevenueEvent.amount_paise).where(
         RevenueEvent.is_training.is_(False), RevenueEvent.status.in_(OPEN_STATUSES)
     )
-    buckets: dict[int, list[int]] = {}
+    buckets: dict[int, list[int]] = {hour: [0, 0] for hour in range(24)}
     for occurred_at, amount in (await session.execute(stmt)).all():
         hour = int((occurred_at.hour + IST_OFFSET_HOURS) % 24)
-        bucket = buckets.setdefault(hour, [0, 0])
-        bucket[0] += 1
-        bucket[1] += int(amount or 0)
+        buckets[hour][0] += 1
+        buckets[hour][1] += int(amount or 0)
+    # Quiet hours are emitted as zeros: a sparse series drawn as a curve invents a shape.
     return [
         {"hour": hour, "events": events, "amount_paise": amount}
-        for hour, (events, amount) in sorted(buckets.items())
+        for hour, (events, amount) in buckets.items()
     ]
 
 
@@ -147,7 +154,7 @@ async def segment_slices(session: AsyncSession) -> list[Slice]:
 
 async def build_graph(session: AsyncSession) -> dict:
     by_kind = await _slice_by(session, RevenueEvent.kind)
-    by_method = await _slice_by(session, RevenueEvent.payment_method)
+    by_method = await _slice_by(session, RevenueEvent.payment_method, _method_label)
     by_cause = await _slice_by(session, RevenueEvent.root_cause, _cause_label)
     by_failure = await _slice_by(session, RevenueEvent.failure_code, _failure_label)
     by_route = await _slice_by(session, RevenueEvent.route)
@@ -199,7 +206,7 @@ def derive_insights(graph: dict) -> list[str]:
         )
 
     hourly = graph["hourly"]
-    if len(hourly) >= 6:
+    if hourly:
         evening = sum(row["amount_paise"] for row in hourly if row["hour"] >= 19)
         daytime = sum(row["amount_paise"] for row in hourly if 9 <= row["hour"] < 19)
         if daytime > 0 and evening / max(daytime, 1) > 0.55:
@@ -213,8 +220,8 @@ def derive_insights(graph: dict) -> list[str]:
         ratio = rates[0]["loss_rate"] / rates[-1]["loss_rate"]
         if ratio >= 1.3:
             insights.append(
-                f"{rates[0]['payment_method']} loses {ratio:.1f}x more often than "
-                f"{rates[-1]['payment_method']} on historical volume."
+                f"{_method_label(rates[0]['payment_method'])} loses {ratio:.1f}x more often than "
+                f"{_method_label(rates[-1]['payment_method'])} on historical volume."
             )
 
     routes = graph["by_route"]
@@ -222,7 +229,7 @@ def derive_insights(graph: dict) -> list[str]:
         share = routes[0]["amount_paise"] / total
         if share >= 0.3:
             insights.append(
-                f"Route {routes[0]['key']} carries {share:.0%} of current exposure "
+                f"Gateway {routes[0]['key']} carries {share:.0%} of current exposure "
                 f"({format_inr(routes[0]['amount_paise'])})."
             )
     return insights[:5]

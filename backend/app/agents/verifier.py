@@ -52,7 +52,8 @@ class Verifier:
         await self._capture_promise(ctx, action)
         ctx.trace.add(
             self.name,
-            f"{action.action_type} verified as {status}",
+            f"{intervention(ActionType(action.action_type)).label} verified as "
+            f"{audit.words(status)}",
             {"action_id": action.id, "provider_ref": action.provider_ref},
             started,
         )
@@ -113,7 +114,10 @@ class Verifier:
             event_type=AuditEvent.OUTCOME_VERIFIED,
             entity_type="revenue_event",
             entity_id=ctx.event.id,
-            summary=f"{format_inr(gross)} confirmed recovered via {action.action_type}",
+            summary=(
+                f"{format_inr(gross)} confirmed recovered via "
+                f"{intervention(ActionType(action.action_type)).label}"
+            ),
             payload={"action": str(action.action_type), "provider_ref": action.provider_ref},
             actor=Actor.AGENT,
             actor_name=str(self.name),

@@ -43,9 +43,18 @@ from app.models.event import RevenueEvent
 from app.models.journey import Decision, RecoveryAction, RecoveryJourney
 from app.services import audit, idempotency
 from app.services import journey as journey_service
-from app.services.policy import BudgetState, PolicyEngine, load_engine
+from app.services.policy import BudgetState, PolicyEngine, explain, load_engine
 
 log = get_logger(__name__)
+
+
+#: How a guardrail verdict reads inside a sentence rather than as a key.
+VERDICT_PHRASE: dict[PolicyVerdict, str] = {
+    PolicyVerdict.ALLOW: "allowed",
+    PolicyVerdict.REQUIRE_APPROVAL: "approval needed",
+    PolicyVerdict.BLOCK: "blocked",
+}
+
 
 # How long a customer lock is held, generous enough to outlive a journey.
 CUSTOMER_LOCK_TTL_SECONDS = 24 * 60 * 60
@@ -238,7 +247,8 @@ class Orchestrator:
             entity_id=decision.id,
             summary=(
                 f"{chosen.label} for {format_inr(ctx.event.amount_paise)} "
-                f"at {chosen.probability:.0%} recovery ({ctx.verdict})"
+                f"at {chosen.probability:.0%} recovery, "
+                f"{VERDICT_PHRASE.get(ctx.verdict, audit.words(ctx.verdict))}"
             ),
             payload={
                 "event_ref": ctx.event.external_ref,
@@ -284,7 +294,7 @@ class Orchestrator:
             event_type=AuditEvent.JOURNEY_TRANSITION,
             entity_type="recovery_journey",
             entity_id=journey.id,
-            summary=f"Journey opened for {event.external_ref} in state {journey.state}",
+            summary=f"Journey opened for {event.external_ref}, now {audit.words(journey.state)}",
             payload={"plan": journey.plan, "strategy_key": journey.strategy_key},
             actor=Actor.SYSTEM,
         )
@@ -352,7 +362,10 @@ class Orchestrator:
                 event_type=AuditEvent.APPROVAL_REQUESTED,
                 entity_type="recovery_action",
                 entity_id=action.id,
-                summary=f"{action_type} on {format_inr(ctx.event.amount_paise)} needs approval",
+                summary=(
+                    f"{intervention(action_type).label} on "
+                    f"{format_inr(ctx.event.amount_paise)} needs approval"
+                ),
                 payload={"reasons": action.blocked_reasons},
                 actor=Actor.AGENT,
                 actor_name="policy_officer",
@@ -362,7 +375,10 @@ class Orchestrator:
             event_type=AuditEvent.ACTION_SCHEDULED,
             entity_type="recovery_action",
             entity_id=action.id,
-            summary=f"{action_type} scheduled as step {step_index + 1} of {len(plan)}",
+            summary=(
+                f"{intervention(action_type).label} scheduled as step "
+                f"{step_index + 1} of {len(plan)}"
+            ),
             payload={"scheduled_at": action.scheduled_at.isoformat(), "status": str(action.status)},
             actor=Actor.SYSTEM,
         )
@@ -555,7 +571,8 @@ class Orchestrator:
             entity_type="recovery_action",
             entity_id=action.id,
             summary=(
-                f"{action.action_type} stopped at the gate: {', '.join(action.blocked_reasons)}"
+                f"{intervention(ActionType(action.action_type)).label} stopped at the gate: "
+                f"{'; '.join(explain(action.blocked_reasons))}"
             ),
             payload={"verdict": str(verdict.verdict), "reasons": action.blocked_reasons},
             actor=Actor.AGENT,
@@ -679,7 +696,7 @@ class Orchestrator:
             event_type=AuditEvent.APPROVAL_GRANTED,
             entity_type="recovery_action",
             entity_id=action.id,
-            summary=f"{action.action_type} approved by {approver}",
+            summary=f"{intervention(ActionType(action.action_type)).label} approved by {approver}",
             payload={"note": note, "reasons": action.blocked_reasons},
             actor=Actor.HUMAN,
             actor_name=approver,
@@ -701,7 +718,7 @@ class Orchestrator:
             event_type=AuditEvent.APPROVAL_REJECTED,
             entity_type="recovery_action",
             entity_id=action.id,
-            summary=f"{action.action_type} rejected by {approver}",
+            summary=f"{intervention(ActionType(action.action_type)).label} rejected by {approver}",
             payload={"reason": reason},
             actor=Actor.HUMAN,
             actor_name=approver,

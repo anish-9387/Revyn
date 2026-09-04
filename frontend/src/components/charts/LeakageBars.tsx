@@ -21,6 +21,14 @@ import type { EventKind, Overview } from "@/lib/types";
 
 type Row = Overview["at_risk_by_kind"][number];
 
+/** Four ticks have to fit a phone's axis, so the tick word is shorter than the label. */
+const AXIS_WORD: Record<EventKind, string> = {
+  payment_failure: "Payments",
+  cart_abandonment: "Checkout",
+  subscription_failure: "Renewals",
+  overdue_invoice: "Invoices",
+};
+
 export function LeakageBars({ rows }: { rows: Row[] }) {
   const byKind = new Map(rows.map((row) => [row.kind, row]));
   const data = LOSS_CLASS_ORDER.map((kind) => {
@@ -28,6 +36,7 @@ export function LeakageBars({ rows }: { rows: Row[] }) {
     return {
       kind,
       label: LOSS_CLASS_SHORT[kind],
+      axis: AXIS_WORD[kind],
       at_risk: (row?.amount_paise ?? 0) / 100,
       expected: (row?.expected_recovery_paise ?? 0) / 100,
       events: row?.events ?? 0,
@@ -61,7 +70,13 @@ export function LeakageBars({ rows }: { rows: Row[] }) {
       <ResponsiveContainer>
         <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 8 }}>
           <CartesianGrid stroke={AXIS.grid} vertical={false} />
-          <XAxis dataKey="label" stroke={AXIS.stroke} tick={AXIS.tick} tickLine={false} />
+          <XAxis
+            dataKey="axis"
+            interval={0}
+            stroke={AXIS.stroke}
+            tick={AXIS.tick}
+            tickLine={false}
+          />
           <YAxis
             stroke={AXIS.stroke}
             tick={AXIS.tick}

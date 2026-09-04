@@ -5,17 +5,16 @@ import { useState } from "react";
 import { AGENT_LABEL } from "@/lib/labels";
 import type { AgentStep } from "@/lib/types";
 
-/** The reasoning chain, in order, with each agent's own numbers available underneath. */
 export function AgentTrace({ steps }: { steps: AgentStep[] }) {
   const [open, setOpen] = useState<string | null>(null);
-  if (steps.length === 0) return <p className="text-xs text-muted">No trace recorded.</p>;
+  if (steps.length === 0) return <p className="text-xs text-muted">No detail recorded.</p>;
 
   return (
     <ol className="space-y-1.5">
       {steps.map((step, index) => {
         const expanded = open === step.agent;
         return (
-          <li key={`${step.agent}-${index}`} className="hairline rounded-lg bg-raised">
+          <li key={`${step.agent}-${index}`} className="hairline rounded-xl bg-raised transition-colors hover:border-hairline-strong">
             <button
               type="button"
               onClick={() => setOpen(expanded ? null : step.agent)}

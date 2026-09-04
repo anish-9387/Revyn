@@ -35,7 +35,7 @@ async def list_journeys(
     )
     journeys = (await session.execute(stmt)).unique().scalars().all()
     return Page(
-        items=[JourneyRead.model_validate(j) for j in journeys],
+        items=[_summarise(j) for j in journeys],
         total=total,
         limit=page.limit,
         offset=page.offset,
@@ -66,7 +66,7 @@ async def get_journey(session: SessionDep, journey_id: str) -> JourneyDetail:
 @router.post("/{journey_id}/pause", response_model=JourneyRead)
 async def pause(session: SessionDep, journey_id: str, payload: JourneyActionRequest) -> JourneyRead:
     journey = await orchestrator.pause_journey(session, journey_id, actor=payload.actor)
-    return JourneyRead.model_validate(journey)
+    return _summarise(journey)
 
 
 @router.post("/{journey_id}/resume", response_model=JourneyRead)
@@ -74,7 +74,7 @@ async def resume(
     session: SessionDep, journey_id: str, payload: JourneyActionRequest
 ) -> JourneyRead:
     journey = await orchestrator.resume_journey(session, journey_id, actor=payload.actor)
-    return JourneyRead.model_validate(journey)
+    return _summarise(journey)
 
 
 @router.post("/{journey_id}/stop", response_model=JourneyRead)
@@ -82,7 +82,18 @@ async def stop(session: SessionDep, journey_id: str, payload: JourneyActionReque
     journey = await orchestrator.close_journey(
         session, journey_id, actor=payload.actor, reason=payload.reason
     )
-    return JourneyRead.model_validate(journey)
+    return _summarise(journey)
+
+
+def _summarise(journey: RecoveryJourney) -> JourneyRead:
+    """Event and customer travel with the row; both relationships are eagerly loaded."""
+    return JourneyRead.model_validate(journey).model_copy(
+        update={
+            "event_ref": journey.event.external_ref,
+            "amount_paise": journey.event.amount_paise,
+            "customer_name": journey.event.customer.name,
+        }
+    )
 
 
 async def _require(session, journey_id: str) -> RecoveryJourney:

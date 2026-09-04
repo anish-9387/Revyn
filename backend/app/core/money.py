@@ -18,12 +18,12 @@ def format_inr(paise: int) -> str:
     rupees = abs(paise) / PAISE_PER_RUPEE
     sign = "-" if paise < 0 else ""
     if rupees >= 1_00_00_000:
-        return f"{sign}Rs {rupees / 1_00_00_000:.2f}Cr"
+        return f"{sign}₹{rupees / 1_00_00_000:.2f}Cr"
     if rupees >= 1_00_000:
-        return f"{sign}Rs {rupees / 1_00_000:.2f}L"
+        return f"{sign}₹{rupees / 1_00_000:.2f}L"
     if rupees >= 1_000:
-        return f"{sign}Rs {rupees / 1_000:.1f}K"
-    return f"{sign}Rs {rupees:,.0f}"
+        return f"{sign}₹{rupees / 1_000:.1f}K"
+    return f"{sign}₹{rupees:,.0f}"
 
 
 def pct(numerator: float, denominator: float) -> float:

@@ -20,6 +20,8 @@ import {
   causeLabel,
   JOURNEY_TONE,
   LOSS_CLASS_LABEL,
+  methodLabel,
+  termLabel,
 } from "@/lib/labels";
 import { href } from "@/lib/routes";
 
@@ -37,7 +39,7 @@ export default function JourneyPage({ params }: { params: Promise<{ id: string }
         <>
           <PageHead
             title={`${data.event.external_ref} — ${LOSS_CLASS_LABEL[data.event.kind]}`}
-            hint={`${data.event.customer.name} · ${titleCase(data.event.customer.segment)} · ${inr(
+            hint={`${data.event.customer.name} · ${termLabel(data.event.customer.segment)} · ${inr(
               data.event.amount_paise,
               { precise: true },
             )} at risk`}
@@ -86,8 +88,8 @@ export default function JourneyPage({ params }: { params: Promise<{ id: string }
                 items={[
                   ["Diagnosed cause", causeLabel(data.event.root_cause)],
                   ["Cause confidence", pct(data.event.cause_confidence, 0)],
-                  ["Gateway message", data.event.failure_reason ?? "—"],
-                  ["Method / route", `${data.event.payment_method} · ${data.event.route}`],
+                  ["Payment message", data.event.failure_reason ?? "—"],
+                  ["Method / route", `${methodLabel(data.event.payment_method)} · ${data.event.route}`],
                   ["Retries before Revyn", String(data.event.retry_count)],
                   ["Occurred", dateTime(data.event.occurred_at)],
                   ["Cohort", data.event.cohort === "control" ? "Control holdout" : "Revyn managed"],

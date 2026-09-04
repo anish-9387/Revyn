@@ -1,21 +1,20 @@
 "use client";
 
-import { CalibrationChart } from "@/components/charts/CalibrationChart";
 import { LedgerWaterfall } from "@/components/charts/LedgerWaterfall";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardHead, PageHead } from "@/components/ui/Card";
 import { DataTable } from "@/components/ui/DataTable";
-import { Resource, Spinner } from "@/components/ui/State";
+import { Resource } from "@/components/ui/State";
 import { KeyValue, StatRow, StatTile } from "@/components/ui/StatTile";
 import { api } from "@/lib/api";
 import { compact, inr, pct, relativeTime, titleCase } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
-import { actionLabel } from "@/lib/labels";
+import { actionLabel, LOSS_CLASS_LABEL } from "@/lib/labels";
+import type { EventKind } from "@/lib/types";
 
 export default function Ledger() {
   const summary = useResource(api.ledgerSummary, { intervalMs: 15000 });
   const entries = useResource(() => api.ledgerEntries(40), { intervalMs: 15000 });
-  const model = useResource(api.model);
 
   return (
     <>
@@ -58,8 +57,8 @@ export default function Ledger() {
 
               <Card>
                 <CardHead
-                  title="Organic baseline, measured"
-                  hint="Read from the untouched control holdout where the sample is large enough, and from the model where it is not."
+                  title="Baseline recovery rate"
+                  hint="Measured from customers not contacted, so credit is given only for lift over organic behavior."
                 />
                 <KeyValue
                   items={[
@@ -69,7 +68,10 @@ export default function Ledger() {
                     ],
                     ...Object.entries(data.cohort_organic_rates.by_kind).map(
                       ([kind, stat]) =>
-                        [titleCase(kind), `${pct(stat.rate, 1)} (n=${compact(stat.sample)})`] as [string, string],
+                        [
+                          LOSS_CLASS_LABEL[kind as EventKind] ?? titleCase(kind),
+                          `${pct(stat.rate, 1)} (n=${compact(stat.sample)})`,
+                        ] as [string, string],
                     ),
                   ]}
                 />
@@ -108,45 +110,6 @@ export default function Ledger() {
           </>
         )}
       </Resource>
-
-      <Card>
-        <CardHead
-          title="Recovery confidence"
-          hint="A probability is only useful if it is honest. These are holdout numbers, not training numbers."
-        />
-        {!model.data ? (
-          <Spinner label="Loading model metrics" />
-        ) : model.data.metadata.trained && model.data.metadata.holdout ? (
-          <div className="grid gap-4 xl:grid-cols-[19rem_1fr]">
-            <KeyValue
-              items={[
-                ["Algorithm", model.data.metadata.algorithm ?? "—"],
-                ["Version", model.data.metadata.version ?? "—"],
-                ["Training rows", compact(model.data.metadata.training_rows ?? 0)],
-                ["Holdout events", compact(model.data.metadata.holdout.samples)],
-                ["Brier score", model.data.metadata.holdout.brier_score.toFixed(3)],
-                ["Log loss", model.data.metadata.holdout.log_loss.toFixed(3)],
-                ["ROC AUC", model.data.metadata.holdout.roc_auc.toFixed(3)],
-                ["Calibration error", model.data.metadata.holdout.calibration_error.toFixed(3)],
-                ["Base recovery rate", pct(model.data.metadata.holdout.base_rate, 1)],
-                [
-                  "Artifact age",
-                  model.data.artifact_age_hours === null ? "—" : `${model.data.artifact_age_hours.toFixed(1)}h`,
-                ],
-              ]}
-            />
-            <CalibrationChart bins={model.data.metadata.holdout.bins} />
-          </div>
-        ) : (
-          <p className="text-xs leading-relaxed text-ink-2">
-            <Badge tone="warning" className="mr-2">
-              heuristic
-            </Badge>
-            No trained artifact is loaded, so Revyn is running its transparent heuristic predictor. Train one with{" "}
-            <code className="text-muted">POST /api/v1/ops/model/train</code> to see calibration.
-          </p>
-        )}
-      </Card>
 
       <Card>
         <CardHead title="Booked recoveries" hint="Most recent first, with the attribution method used for each." />

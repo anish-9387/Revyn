@@ -12,7 +12,7 @@ import { Resource } from "@/components/ui/State";
 import { api } from "@/lib/api";
 import { inr, pct, relativeTime } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
-import { ACTION_LABEL, actionLabel, VERDICT_TONE } from "@/lib/labels";
+import { ACTION_LABEL, actionLabel, VERDICT_LABEL, VERDICT_TONE } from "@/lib/labels";
 import { href } from "@/lib/routes";
 
 const LIMIT = 25;
@@ -67,6 +67,19 @@ export default function Decisions() {
                 rowKey={(row) => row.id}
                 onRowClick={(row) => router.push(href(`/decisions/${row.id}`))}
                 columns={[
+                  {
+                    key: "event",
+                    head: "Event",
+                    cell: (row) => (
+                      <span>
+                        <span className="text-ink">{row.event_ref ?? "—"}</span>
+                        <span className="block text-[11px] text-muted">
+                          {row.amount_paise === null ? "" : `${inr(row.amount_paise)} · `}
+                          {actionLabel(row.chosen_action)}
+                        </span>
+                      </span>
+                    ),
+                  },
                   { key: "action", head: "Chosen action", cell: (row) => actionLabel(row.chosen_action) },
                   {
                     key: "verdict",
@@ -74,7 +87,7 @@ export default function Decisions() {
                     cell: (row) => (
                       <span title={row.policy_reasons.join(", ")}>
                         <Badge tone={VERDICT_TONE[row.policy_verdict]}>
-                          {row.policy_verdict.replace(/_/g, " ")}
+                          {VERDICT_LABEL[row.policy_verdict]}
                         </Badge>
                       </span>
                     ),

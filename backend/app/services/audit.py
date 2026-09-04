@@ -20,6 +20,11 @@ from app.models.audit import AuditLog
 GENESIS_HASH = "0" * 64
 
 
+def words(value: str) -> str:
+    """Enum identifiers are stable keys; the summary a reviewer reads should be English."""
+    return str(value).replace("_", " ")
+
+
 def _digest(entry: dict[str, Any]) -> str:
     canonical = json.dumps(entry, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(canonical.encode()).hexdigest()

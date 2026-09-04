@@ -120,12 +120,16 @@ export const api = {
 
   degradation: () => request<DegradationWindow[]>("/degradation"),
   degradationLive: () =>
-    request<{ routes: ScopeHealth[]; methods: ScopeHealth[]; active: ScopeHealth[] }>(
-      "/degradation/live",
-    ),
-  degradationSeries: (route: string, hours = 6) =>
-    request<{ route: string; points: FailurePoint[] }>("/degradation/series", {
-      query: { route, hours },
+    request<{
+      routes: ScopeHealth[];
+      methods: ScopeHealth[];
+      active: ScopeHealth[];
+      window_minutes: number;
+      min_attempts: number;
+    }>("/degradation/live"),
+  degradationSeries: (value: string, scope: "route" | "method" = "route", hours = 6) =>
+    request<{ scope: string; value: string; points: FailurePoint[] }>("/degradation/series", {
+      query: { value, scope, hours },
     }),
 
   audit: (query?: Query) => request<Page<AuditEntry>>("/audit", { query }),

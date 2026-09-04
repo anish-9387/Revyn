@@ -103,9 +103,11 @@ async def test_degradation_is_detected_and_charted(client):
     live = (await client.get(f"{PREFIX}/degradation/live")).json()
     assert live["routes"]
     assert live["active"], "the seeded incident must be visible"
-    route = live["active"][0]["scope_value"]
-    series = (await client.get(f"{PREFIX}/degradation/series", params={"route": route})).json()
-    assert series["points"]
+    incident = live["active"][0]
+    params = {"value": incident["scope_value"], "scope": incident["scope_type"]}
+    series = (await client.get(f"{PREFIX}/degradation/series", params=params)).json()
+    assert series["points"], "every degraded scope must be chartable, method as well as route"
+    assert len({point["at"] for point in series["points"]}) == len(series["points"])
 
 
 async def test_what_if_simulation_reports_a_delta(client):

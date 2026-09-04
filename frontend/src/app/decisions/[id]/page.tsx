@@ -22,7 +22,7 @@ export default function DecisionPage({ params }: { params: Promise<{ id: string 
         <>
           <PageHead
             title={`Decision — ${actionLabel(decision.chosen_action)}`}
-            hint={`Recorded ${dateTime(decision.created_at)} by the ${decision.reasoning_provider} reasoner on model ${decision.model_version}.`}
+            hint={`Recorded ${dateTime(decision.created_at)} — every option that was priced, and why this one won.`}
             actions={
               decision.journey_id ? (
                 <Link

@@ -33,7 +33,8 @@ class Learner:
             entity_type="strategy_stat",
             entity_id=stat.id,
             summary=(
-                f"{key} / {action_type} now {stat.posterior_mean:.0%} over {stat.trials} trials"
+                f"{learning.describe_context(key)}: {intervention(action_type).label} "
+                f"now recovers {stat.posterior_mean:.0%} over {stat.trials} trials"
             ),
             payload={
                 "context_key": key,
@@ -47,7 +48,8 @@ class Learner:
         )
         ctx.trace.add(
             self.name,
-            f"Playbook: {action_type} at {stat.posterior_mean:.0%} over {stat.trials} trials",
+            f"Playbook: {intervention(action_type).label} at {stat.posterior_mean:.0%} "
+            f"over {stat.trials} trials",
             {"context_key": key, "posterior_mean": round(stat.posterior_mean, 4)},
             started,
         )

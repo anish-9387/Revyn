@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import APIRouter, Query
 from sqlalchemy import select
 
@@ -51,16 +53,23 @@ async def degradation_live(session: SessionDep) -> dict:
         "routes": [health.as_dict() for health in state.routes.values()],
         "methods": [health.as_dict() for health in state.methods.values()],
         "active": [health.as_dict() for health in state.active],
+        "window_minutes": degradation_engine.RECENT_WINDOW_MINUTES,
+        "min_attempts": degradation_engine.MIN_RECENT_ATTEMPTS,
     }
 
 
 @router.get("/degradation/series")
 async def degradation_series(
     session: SessionDep,
-    route: str = Query(...),
+    value: str = Query(..., description="Route or payment-method name to chart"),
+    scope: Literal["route", "method"] = Query(default="route"),
     hours: int = Query(default=6, ge=1, le=48),
 ) -> dict:
+    """Failure-rate history for one scope, charted against the baseline the detector used."""
     return {
-        "route": route,
-        "points": await degradation_engine.failure_rate_series(session, route, hours=hours),
+        "scope": scope,
+        "value": value,
+        "points": await degradation_engine.failure_rate_series(
+            session, value, scope=scope, hours=hours
+        ),
     }

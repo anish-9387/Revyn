@@ -573,6 +573,24 @@ FAILURE_LABELS: dict[FailureCode, str] = {
     FailureCode.PROMISE_BROKEN: "Promise to pay not honoured",
 }
 
+#: Display names for the four loss classes, matching the wording the dashboard uses.
+KIND_LABELS: dict[EventKind, str] = {
+    EventKind.PAYMENT_FAILURE: "Payment failures",
+    EventKind.CART_ABANDONMENT: "Checkout abandonment",
+    EventKind.SUBSCRIPTION_FAILURE: "Subscription failures",
+    EventKind.OVERDUE_INVOICE: "Overdue invoices",
+}
+
+#: Display names for payment methods; acronyms must not be title-cased into words.
+METHOD_LABELS: dict[PaymentMethod, str] = {
+    PaymentMethod.UPI: "UPI",
+    PaymentMethod.CARD: "Card",
+    PaymentMethod.NETBANKING: "Netbanking",
+    PaymentMethod.WALLET: "Wallet",
+    PaymentMethod.EMI: "EMI",
+    PaymentMethod.BANK_TRANSFER: "Bank transfer",
+}
+
 #: Healthier alternatives suggested when a method degrades.
 METHOD_FALLBACKS: dict[PaymentMethod, tuple[PaymentMethod, ...]] = {
     PaymentMethod.UPI: (PaymentMethod.CARD, PaymentMethod.NETBANKING, PaymentMethod.WALLET),

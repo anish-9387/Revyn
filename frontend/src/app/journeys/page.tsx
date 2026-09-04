@@ -10,9 +10,9 @@ import { Select } from "@/components/ui/Field";
 import { Pager } from "@/components/ui/Pager";
 import { Resource } from "@/components/ui/State";
 import { api } from "@/lib/api";
-import { compact, inr, relativeTime, titleCase } from "@/lib/format";
+import { inr, plural, relativeTime, titleCase } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
-import { actionLabel, JOURNEY_TONE } from "@/lib/labels";
+import { actionLabel, JOURNEY_TONE, strategyLabel } from "@/lib/labels";
 import { href } from "@/lib/routes";
 import type { JourneyState } from "@/lib/types";
 
@@ -70,6 +70,20 @@ export default function Journeys() {
                 onRowClick={(row) => router.push(href(`/journeys/${row.id}`))}
                 columns={[
                   {
+                    key: "journey",
+                    head: "Journey",
+                    cell: (row) => (
+                      <span>
+                        <span className="text-ink">{row.event_ref ?? row.id.slice(0, 8)}</span>
+                        <span className="block text-[11px] text-muted">
+                          {[row.customer_name, row.amount_paise === null ? null : inr(row.amount_paise)]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      </span>
+                    ),
+                  },
+                  {
                     key: "state",
                     head: "State",
                     cell: (row) => <Badge tone={JOURNEY_TONE[row.state]}>{titleCase(row.state)}</Badge>,
@@ -79,7 +93,7 @@ export default function Journeys() {
                     head: "Strategy",
                     cell: (row) => (
                       <span>
-                        <span className="text-ink">{titleCase(row.strategy_key)}</span>
+                        <span className="text-ink">{strategyLabel(row.strategy_key)}</span>
                         <span className="block text-[11px] text-muted">
                           step {row.step_index + 1} of {row.plan.length || 1}
                           {row.plan[row.step_index] ? ` · ${actionLabel(row.plan[row.step_index].action)}` : ""}
@@ -92,7 +106,8 @@ export default function Journeys() {
                     head: "Touches used",
                     cell: (row) => (
                       <span className="text-[11px] text-ink-2">
-                        {row.contacts_used} contacts · {row.retries_used} retries · {row.discounts_used} offers
+                        {plural(row.contacts_used, "contact")} · {plural(row.retries_used, "retry", "retries")} ·{" "}
+                        {plural(row.discounts_used, "offer")}
                       </span>
                     ),
                   },
@@ -110,7 +125,7 @@ export default function Journeys() {
                   { key: "cost", head: "Cost", align: "right", cell: (row) => inr(row.cost_paise) },
                   {
                     key: "next",
-                    head: "Next action",
+                    head: "Timing",
                     align: "right",
                     cell: (row) =>
                       row.closed_at ? (
@@ -124,7 +139,6 @@ export default function Journeys() {
                 ]}
               />
               <Pager total={data.total} limit={LIMIT} offset={offset} onChange={setOffset} />
-              <p className="mt-2 text-[11px] text-muted">{compact(data.total)} journeys.</p>
             </>
           )}
         </Resource>

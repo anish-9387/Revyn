@@ -69,3 +69,8 @@ export function hourLabel(hour: number): string {
   const display = hour % 12 === 0 ? 12 : hour % 12;
   return `${display}${suffix}`;
 }
+
+/** "1 contact", "0 contacts" — a count and its unit, agreeing. */
+export function plural(count: number, unit: string, many = `${unit}s`): string {
+  return `${compact(count)} ${count === 1 ? unit : many}`;
+}

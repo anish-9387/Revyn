@@ -20,11 +20,13 @@ import type { FailurePoint } from "@/lib/types";
 /** One series plus a baseline: the whole claim is "this route is worse than it usually is". */
 export function FailureRateSeries({
   points,
-  route,
+  label,
+  kind,
   baseline,
 }: {
   points: FailurePoint[];
-  route: string;
+  label: string;
+  kind: "route" | "method";
   baseline: number;
 }) {
   const data = points.map((point) => ({
@@ -37,8 +39,8 @@ export function FailureRateSeries({
 
   return (
     <ChartFrame
-      title={`Failure rate — ${route}`}
-      hint={`Dashed line is the 7-day baseline for this route (${pct(baseline, 1)}). Attempts are in the tooltip, because a rate without a denominator can be a traffic dip.`}
+      title={`Failure rate — ${label}`}
+      hint={`Dashed line is the 7-day baseline for this ${kind} (${pct(baseline, 1)}). Attempts are in the tooltip, because a rate without a denominator can be a traffic dip.`}
       legend={[
         { label: "Observed failure rate", colour: "var(--series-2)" },
         { label: "7-day baseline", colour: "var(--axis)" },

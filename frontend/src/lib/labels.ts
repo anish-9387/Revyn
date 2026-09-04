@@ -58,6 +58,16 @@ export const CAUSE_LABEL: Record<string, string> = {
   unknown: "Undetermined",
 };
 
+/** Mirrors the backend's method names, so prose and tables agree on casing. */
+export const METHOD_LABEL: Record<string, string> = {
+  upi: "UPI",
+  card: "Card",
+  netbanking: "Netbanking",
+  wallet: "Wallet",
+  emi: "EMI",
+  bank_transfer: "Bank transfer",
+};
+
 export const AGENT_LABEL: Record<string, string> = {
   sentinel: "Sentinel",
   investigator: "Investigator",
@@ -105,6 +115,13 @@ export const VERDICT_TONE: Record<PolicyVerdict, Tone> = {
   block: "critical",
 };
 
+/** Matches the wording of the guardrail filter on the decisions page. */
+export const VERDICT_LABEL: Record<PolicyVerdict, string> = {
+  allow: "Allowed",
+  require_approval: "Needed approval",
+  block: "Blocked",
+};
+
 export const SEVERITY_TONE: Record<string, Tone> = {
   none: "neutral",
   watch: "warning",
@@ -116,6 +133,86 @@ export function actionLabel(action: string): string {
   return ACTION_LABEL[action] ?? action.replace(/_/g, " ");
 }
 
+export function agentLabel(name: string): string {
+  return AGENT_LABEL[name] ?? termLabel(name);
+}
+
+export function methodLabel(method: string): string {
+  return METHOD_LABEL[method] ?? termLabel(method);
+}
+
 export function causeLabel(cause: string): string {
   return CAUSE_LABEL[cause] ?? cause.replace(/_/g, " ");
+}
+
+/** Mirrors the backend's gateway failure-code wording; a raw code reads like a leaked key. */
+export const FAILURE_CODE_LABEL: Record<string, string> = {
+  insufficient_funds: "Insufficient funds at capture",
+  authentication_failed: "Authentication failed",
+  card_expired: "Card expired",
+  invalid_vpa: "Invalid UPI handle",
+  payment_cancelled: "Cancelled by customer",
+  otp_timeout: "OTP not submitted in time",
+  limit_exceeded: "Transaction limit exceeded",
+  issuer_declined: "Declined by issuing bank",
+  issuer_unavailable: "Issuing bank unavailable",
+  psp_unavailable: "UPI PSP unavailable",
+  gateway_timeout: "Gateway timed out",
+  gateway_error: "Gateway error",
+  checkout_error: "Checkout error",
+  configuration_error: "Payment configuration error",
+  checkout_timeout: "Checkout session expired",
+  price_hesitation: "Dropped at order summary",
+  method_unavailable: "Preferred method unavailable",
+  invoice_unpaid: "Invoice past due date",
+  promise_broken: "Promise to pay not honoured",
+};
+
+export function failureCodeLabel(code: string): string {
+  return FAILURE_CODE_LABEL[code] ?? termLabel(code);
+}
+
+const ACRONYMS: Record<string, string> = {
+  upi: "UPI",
+  emi: "EMI",
+  neft: "NEFT",
+  imps: "IMPS",
+  vip: "VIP",
+  sms: "SMS",
+  otp: "OTP",
+  cvv: "CVV",
+  b2b: "B2B",
+  b2c: "B2C",
+};
+
+/** Payments vocabulary arrives in mixed casing; acronyms must not be title-cased into words. */
+export function termLabel(value: string): string {
+  return value
+    .replace(/[_-]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => ACRONYMS[word.toLowerCase()] ?? word[0].toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+/** Field names a simulation reports back as changed, in the wording the guardrails page uses. */
+export const POLICY_FIELD_LABEL: Record<string, string> = {
+  max_contacts: "Maximum contacts",
+  max_retries: "Maximum retries",
+  max_discount_offers: "Maximum discount offers",
+  max_discount_pct: "Maximum discount",
+  min_confidence: "Minimum confidence",
+  min_expected_value_paise: "Minimum expected value",
+  human_approval_amount_paise: "Human approval above",
+  degradation_retry_guard: "Degradation retry guard",
+  quiet_hours_enforced: "Quiet hours",
+};
+
+/** A strategy key is `loss class | cause family | value band`; read it as a sentence, not a key. */
+export function strategyLabel(key: string): string {
+  const [kind, family, band] = key.split("|");
+  const head = LOSS_CLASS_LABEL[kind as EventKind] ?? termLabel(kind ?? key);
+  return [head, family ? termLabel(family) : null, band ? `${termLabel(band)} ticket` : null]
+    .filter(Boolean)
+    .join(" · ");
 }

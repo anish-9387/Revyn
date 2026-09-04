@@ -21,7 +21,7 @@ from app.core.constants import (
     EventStatus,
     RootCause,
 )
-from app.data.catalog import cause_profile, intervention
+from app.data.catalog import KIND_LABELS, cause_profile, intervention
 from app.models.event import RevenueEvent
 from app.models.insight import StrategyStat
 
@@ -46,6 +46,14 @@ def context_key(
 ) -> str:
     layer: CauseLayer = cause_profile(RootCause(cause)).layer
     return f"{EventKind(kind)}|{layer}|{value_band(segment)}"
+
+
+def describe_context(key: str) -> str:
+    """The same cell as a phrase, for prose that a merchant reads rather than parses."""
+    kind, _, rest = key.partition("|")
+    layer, _, band = rest.partition("|")
+    head = KIND_LABELS.get(EventKind(kind), kind.replace("_", " ")) if kind else key
+    return " · ".join(part for part in (head, layer, f"{band} ticket" if band else "") if part)
 
 
 @dataclass(slots=True)

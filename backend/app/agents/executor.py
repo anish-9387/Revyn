@@ -23,6 +23,7 @@ from app.core.constants import (
 from app.core.errors import AmbiguousGatewayStateError, GatewayError
 from app.core.logging import get_logger
 from app.core.money import format_inr
+from app.data.catalog import intervention
 from app.integrations import messaging
 from app.integrations.razorpay import build_request, get_gateway
 from app.models.journey import RecoveryAction
@@ -110,8 +111,8 @@ class Executor:
             entity_type="recovery_action",
             entity_id=action.id,
             summary=(
-                f"{action.action_type} returned {result.status} "
-                f"for {format_inr(ctx.event.amount_paise)}"
+                f"{intervention(ActionType(action.action_type)).label} "
+                f"{audit.words(result.status)} for {format_inr(ctx.event.amount_paise)}"
             ),
             payload={
                 "action": str(action.action_type),
@@ -125,7 +126,8 @@ class Executor:
         )
         ctx.trace.add(
             self.name,
-            f"{action.action_type} executed via {gateway.name}: {result.status}",
+            f"{intervention(ActionType(action.action_type)).label} via {gateway.name}: "
+            f"{audit.words(result.status)}",
             {"provider_ref": result.provider_ref, "message": result.message},
             started,
         )
@@ -147,7 +149,7 @@ class Executor:
         verified = await get_gateway().fetch_state(request)
         ctx.trace.add(
             self.name,
-            f"Payment state was uncertain, verification reports {verified.status}",
+            f"Payment state was uncertain, verification reports {audit.words(verified.status)}",
             {"verified_status": str(verified.status), "message": verified.message},
         )
         return verified

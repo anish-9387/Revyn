@@ -31,7 +31,7 @@ export function LedgerWaterfall({
       label: "Would have recovered anyway",
       value: -organic,
       kind: "subtract",
-      note: "Organic baseline from the control holdout and the model",
+      note: "Estimate of recoveries that would happen without intervention",
     },
     { label: "Recovery cost", value: -cost, kind: "subtract", note: "Messages, calls, discounts, escalations" },
     {

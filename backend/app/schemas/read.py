@@ -94,6 +94,9 @@ class DecisionRead(ApiModel):
 
     id: str
     event_id: str
+    #: The event this choice was about, so a log row names the money it moved.
+    event_ref: str | None = None
+    amount_paise: int | None = None
     journey_id: str | None
     chosen_action: ActionType
     recovery_probability: float
@@ -115,6 +118,10 @@ class DecisionRead(ApiModel):
 class JourneyRead(ApiModel):
     id: str
     event_id: str
+    #: Who and what the journey is about, so a row is not just an opaque id.
+    event_ref: str | None = None
+    amount_paise: int | None = None
+    customer_name: str | None = None
     customer_id: str
     state: JourneyState
     strategy_key: str

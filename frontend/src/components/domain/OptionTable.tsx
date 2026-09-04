@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/Badge";
 import { DataTable } from "@/components/ui/DataTable";
 import { inr, pct } from "@/lib/format";
-import { actionLabel, VERDICT_TONE } from "@/lib/labels";
+import { actionLabel, VERDICT_LABEL, VERDICT_TONE } from "@/lib/labels";
 import type { ActionOption } from "@/lib/types";
 
 /** The full option set, priced. Showing the losers is what makes the winner defensible. */
@@ -58,7 +58,7 @@ export function OptionTable({ options, chosen }: { options: ActionOption[]; chos
           head: "Guardrail",
           cell: (row) => (
             <span title={row.blocked_reasons.join(", ")}>
-              <Badge tone={VERDICT_TONE[row.verdict]}>{row.verdict.replace(/_/g, " ")}</Badge>
+              <Badge tone={VERDICT_TONE[row.verdict]}>{VERDICT_LABEL[row.verdict]}</Badge>
             </span>
           ),
         },

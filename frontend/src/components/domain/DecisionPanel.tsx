@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card, CardHead } from "@/components/ui/Card";
 import { KeyValue } from "@/components/ui/StatTile";
 import { dateTime, inr, pct } from "@/lib/format";
-import { actionLabel, VERDICT_TONE } from "@/lib/labels";
+import { actionLabel, VERDICT_LABEL, VERDICT_TONE } from "@/lib/labels";
 import type { Decision } from "@/lib/types";
 
 export function DecisionPanel({
@@ -23,7 +23,7 @@ export function DecisionPanel({
           <CardHead
             title={`Chosen: ${actionLabel(decision.chosen_action)}`}
             hint="Selected on expected value after cost, friction and guardrails — not on raw success probability."
-            actions={<Badge tone={VERDICT_TONE[decision.policy_verdict]}>{decision.policy_verdict.replace(/_/g, " ")}</Badge>}
+            actions={<Badge tone={VERDICT_TONE[decision.policy_verdict]}>{VERDICT_LABEL[decision.policy_verdict]}</Badge>}
           />
           <KeyValue
             items={[
@@ -37,8 +37,6 @@ export function DecisionPanel({
               ],
               ["Expected recovery", inr(decision.expected_recovery_paise)],
               ["Expected value after cost", inr(decision.expected_value_paise)],
-              ["Model", decision.model_version],
-              ["Reasoning", decision.reasoning_provider],
               ["Decided", dateTime(decision.created_at)],
             ]}
           />
@@ -67,7 +65,7 @@ export function DecisionPanel({
 
       <div className="space-y-4">
         <Card>
-          <CardHead title="Evidence" hint="Each line is a number the investigator actually computed." />
+          <CardHead title="Evidence" hint="Signals used to assess this recovery opportunity." />
           {decision.evidence.length > 0 ? (
             <ul className="space-y-1.5">
               {decision.evidence.map((line) => (
@@ -101,7 +99,7 @@ export function DecisionPanel({
         ) : null}
 
         <Card>
-          <CardHead title="Agent trace" hint="Expand a step to see what that agent passed on." />
+          <CardHead title="How the decision was made" hint="Each step in order — expand to see detail." />
           <AgentTrace steps={decision.agent_trace} />
         </Card>
       </div>
