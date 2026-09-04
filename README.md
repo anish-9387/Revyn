@@ -256,7 +256,3 @@ are implemented as specified.
 - `docs/architecture.md` — how the layers fit, and where to put a new agent or action
 - `docs/evaluation.md` — how the probability model and the money attribution are measured
 - `docs/demo-script.md` — a walkthrough with the exact calls, in order
-
-## Licence
-
-Unlicensed hackathon project. Synthetic data only; no real customer or payment data is included.
