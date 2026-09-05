@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 import { IconButton } from "@/components/ui/Button";
+import { BarChart3, BookOpen, Coins, FlaskConical, Layers, LayoutGrid, Radar, Route, ScrollText, ShieldCheck, SlidersHorizontal, Sparkles } from "@/lib/icons";
 import { NAV } from "@/lib/routes";
 
 function Brand({ compact = false }: { compact?: boolean }) {
@@ -13,7 +14,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
       <span
         aria-hidden
         className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-[16px] font-bold text-white shadow-soft"
-        style={{ background: "linear-gradient(135deg, #276DFF 0%, #3AA07A 55%, #8E7BFF 100%)" }}
+        style={{ background: "linear-gradient(135deg, #2563EB 0%, #06B6D4 55%, #7C3AED 100%)" }}
       >
         R
       </span>
@@ -21,105 +22,28 @@ function Brand({ compact = false }: { compact?: boolean }) {
         <span className="block text-[15px] font-semibold tracking-tight text-ink leading-none">Revyn</span>
         {compact ? null : <span className="block truncate text-[11px] tracking-wide text-muted">Revenue recovery</span>}
       </span>
-      <span className="ml-auto hidden h-6 items-center rounded-full bg-series-1/10 px-2 text-[10px] font-semibold tracking-widest text-series-1 sm:inline-flex">LIVE</span>
+      <span className="ml-auto hidden h-6 items-center rounded-full bg-blue-50 px-2 text-[10px] font-semibold tracking-widest text-blue-600 ring-1 ring-blue-200 sm:inline-flex">LIVE</span>
     </div>
   );
 }
 
 function NavIcon({ name, active }: { name: string; active: boolean }) {
-  const cls = `h-[15px] w-[15px] shrink-0 ${active ? "text-series-1" : "text-muted"}`;
+  const cls = `h-[15px] w-[15px] shrink-0 ${active ? "text-blue-600" : "text-slate-400"}`;
+  const props = { className: cls, size: 15 } as const;
   switch (name) {
-    case "grid":
-      return (
-        <svg viewBox="0 0 16 16" className={cls} fill="none" aria-hidden>
-          <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.3" />
-          <rect x="8.5" y="1.5" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.3" />
-          <rect x="1.5" y="8.5" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.3" />
-          <rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.2" stroke="currentColor" strokeWidth="1.3" />
-        </svg>
-      );
-    case "radar":
-      return (
-        <svg viewBox="0 0 16 16" className={cls} fill="none" aria-hidden>
-          <circle cx="8" cy="8" r="5.6" stroke="currentColor" strokeWidth="1.3" />
-          <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.2" />
-          <path d="M8 2.2 L8 5 M8 11 L8 13.8 M2.2 8 L5 8 M11 8 L13.8 8" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" />
-        </svg>
-      );
-    case "route":
-      return (
-        <svg viewBox="0 0 16 16" className={cls} fill="none" aria-hidden>
-          <circle cx="3.6" cy="3.8" r="1.6" stroke="currentColor" strokeWidth="1.3" />
-          <circle cx="12.4" cy="12.2" r="1.6" stroke="currentColor" strokeWidth="1.3" />
-          <path d="M4.8 5 Q8 7.5 11.2 10.8" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" fill="none" />
-          <circle cx="8" cy="8" r="1.15" fill="currentColor" opacity="0.85" />
-        </svg>
-      );
-    case "shield":
-      return (
-        <svg viewBox="0 0 16 16" className={cls} fill="none" aria-hidden>
-          <path d="M8 1.6 L12.6 4.2 V8.1 C12.6 10.8 10.7 13 8 14.1 C5.3 13 3.4 10.8 3.4 8.1 V4.2Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
-          <path d="M6 8.1 L7.5 9.6 L10.4 6.4" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      );
-    case "layers":
-      return (
-        <svg viewBox="0 0 16 16" className={cls} fill="none" aria-hidden>
-          <path d="M2.2 6.2 L8 2.8 L13.8 6.2 L8 9.6Z" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" />
-          <path d="M2.2 9 L8 12.4 L13.8 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.75" />
-        </svg>
-      );
-    case "chart":
-      return (
-        <svg viewBox="0 0 16 16" className={cls} fill="none" aria-hidden>
-          <rect x="2" y="9.5" width="2.6" height="4" rx="0.7" stroke="currentColor" strokeWidth="1.2" />
-          <rect x="6.2" y="6.2" width="2.6" height="7.3" rx="0.7" stroke="currentColor" strokeWidth="1.2" />
-          <rect x="10.8" y="3" width="2.6" height="10.5" rx="0.7" stroke="currentColor" strokeWidth="1.2" />
-        </svg>
-      );
-    case "flask":
-      return (
-        <svg viewBox="0 0 16 16" className={cls} fill="none" aria-hidden>
-          <path d="M6.2 2.2 H9.8 L9.8 6.2 L12.4 10.6 C13 11.7 12.2 13.4 10.9 13.4 H5.1 C3.8 13.4 3 11.7 3.6 10.6Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-          <path d="M5.6 9 H10.4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" opacity="0.6" />
-        </svg>
-      );
-    case "coins":
-      return (
-        <svg viewBox="0 0 16 16" className={cls} fill="none" aria-hidden>
-          <ellipse cx="8" cy="4.8" rx="4.4" ry="2.1" stroke="currentColor" strokeWidth="1.25" />
-          <path d="M3.6 4.8 V9.6 C3.6 10.75 5.57 11.7 8 11.7 C10.43 11.7 12.4 10.75 12.4 9.6 V4.8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-          <ellipse cx="8" cy="9.6" rx="4.4" ry="2.1" stroke="currentColor" strokeWidth="1.15" opacity="0.85" />
-        </svg>
-      );
-    case "book":
-      return (
-        <svg viewBox="0 0 16 16" className={cls} fill="none" aria-hidden>
-          <path d="M3 2.6 C3 2.6 5 1.9 8 2.6 V13.2 C5 12.5 3 13.2 3 13.2Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-          <path d="M13 2.6 C13 2.6 11 1.9 8 2.6 V13.2 C11 12.5 13 13.2 13 13.2Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-          <path d="M8 2.6 V13.2" stroke="currentColor" strokeWidth="1.15" />
-        </svg>
-      );
-    case "sliders":
-      return (
-        <svg viewBox="0 0 16 16" className={cls} fill="none" aria-hidden>
-          <path d="M2 4.2 H6.2" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
-          <path d="M9.8 4.2 H14" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
-          <circle cx="8" cy="4.2" r="1.6" stroke="currentColor" strokeWidth="1.2" fill="var(--surface)" />
-          <path d="M2 11.8 H9.2" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
-          <path d="M12.8 11.8 H14" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
-          <circle cx="11" cy="11.8" r="1.6" stroke="currentColor" strokeWidth="1.2" fill="var(--surface)" />
-        </svg>
-      );
-    case "scroll":
-      return (
-        <svg viewBox="0 0 16 16" className={cls} fill="none" aria-hidden>
-          <path d="M5 2.4 H11 C11 2.4 11.8 2.4 11.8 3.2 V12.8 C11.8 13.6 11 13.6 11 13.6 H5 C4.2 13.6 4.2 12.8 4.2 12.8 V3.2 C4.2 2.4 5 2.4 5 2.4Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-          <path d="M6.2 6 H9.8 M6.2 8.2 H9.8 M6.2 10.4 H9" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" />
-        </svg>
-      );
-    default:
-      return <span className={cls} aria-hidden>•</span>;
+    case "grid": return <LayoutGrid {...props} />;
+    case "radar": return <Radar {...props} />;
+    case "route": return <Route {...props} />;
+    case "shield": return <ShieldCheck {...props} />;
+    case "layers": return <Layers {...props} />;
+    case "chart": return <BarChart3 {...props} />;
+    case "flask": return <FlaskConical {...props} />;
+    case "coins": return <Coins {...props} />;
+    case "book": return <BookOpen {...props} />;
+    case "sliders": return <SlidersHorizontal {...props} />;
+    case "scroll": return <ScrollText {...props} />;
+    case "sparkles": return <Sparkles {...props} />;
+    default: return <span className={cls} aria-hidden>•</span>;
   }
 }
 

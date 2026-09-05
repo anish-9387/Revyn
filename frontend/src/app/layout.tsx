@@ -15,8 +15,7 @@ export const viewport: Viewport = {
   ],
 };
 
-// Runs before paint so a light-theme reader never sees a dark flash.
-const THEME_BOOTSTRAP = `try{var t=localStorage.getItem("revyn-theme");if(t==="light")document.documentElement.dataset.theme="light"}catch(e){}`;
+const THEME_BOOTSTRAP = `try{var t=localStorage.getItem("revyn-theme");if(t==="dark")document.documentElement.dataset.theme="dark"}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -93,6 +93,7 @@ async def seed(
     _now = _utcnow()
     mandates: list[Mandate] = []
     mandat_by_customer: dict[str, Mandate] = {}
+    seq = 700000
     for cust in dataset.customers:
         if rng2.random() < 0.45:
             rail = rng2.choice([MandateRail.UPI_AUTOPAY, MandateRail.CARD_EMANDATE, MandateRail.NACH])
@@ -100,7 +101,7 @@ async def seed(
             cap = rng2.choice([5_000_00, 10_000_00, 15_000_00, 50_000_00])
             m = Mandate(
                 customer_id=cust.id,
-                external_ref=f"MND{rng2.randint(100000, 1099999)}",
+                external_ref=f"MND{seq:07d}",
                 rail=rail,
                 status=status,
                 max_amount_paise=cap,
@@ -110,6 +111,7 @@ async def seed(
                 registered_at=_now - _td(days=rng2.randint(10, 400)),
                 revoked_at=_now - _td(days=rng2.randint(1, 10)) if status == MandateStatus.REVOKED else None,
             )
+            seq += 1
             mandates.append(m)
             mandat_by_customer[cust.id] = m
     if mandates:

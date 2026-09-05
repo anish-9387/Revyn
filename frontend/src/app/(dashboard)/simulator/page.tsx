@@ -217,6 +217,17 @@ function Outcome({ result }: { result: SimulationResult }) {
             Against the legacy fixed-retry workflow: {inr(legacyDelta.net_expected_delta_paise)} net and{" "}
             {compact(legacyDelta.contact_delta)} contacts.
           </p>
+          {result.current.npci_wasted !== undefined ? (
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs font-bold text-slate-700">NPCI retry budget - the chart no other entrant can produce</p>
+              <div className="mt-2 grid grid-cols-3 gap-3 text-center">
+                <div className="rounded-xl bg-white p-3 ring-1 ring-slate-200"><div className="text-sm font-bold text-red-600">{result.legacy_baseline.npci_wasted} wasted</div><div className="text-[11px] text-slate-500">Generic baseline</div></div>
+                <div className="rounded-xl bg-white p-3 ring-1 ring-slate-200"><div className="text-sm font-bold text-slate-700">{result.current.npci_wasted} wasted</div><div className="text-[11px] text-slate-500">Revyn current</div></div>
+                <div className="rounded-xl bg-emerald-50 p-3 ring-1 ring-emerald-200"><div className="text-sm font-bold text-emerald-700">{result.proposed.npci_wasted} wasted</div><div className="text-[11px] text-emerald-700">Proposed</div></div>
+              </div>
+              <p className="mt-2 text-xs text-slate-500">Futile prevented: legacy {result.legacy_baseline.futile_prevented} · current {result.current.futile_prevented} · proposed {result.proposed.futile_prevented} - these are RETRY_FUTILE blocks (mandate revoked / cap / PDN).</p>
+            </div>
+          ) : null}
         </div>
       </Card>
 
