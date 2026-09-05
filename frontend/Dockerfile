@@ -13,10 +13,12 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Baked in at build time: Next.js inlines NEXT_PUBLIC_* into the client bundle.
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
-RUN npm run build
+  # Baked in at build time: Next.js inlines NEXT_PUBLIC_* into the client bundle.
+  ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
+  ARG NEXT_PUBLIC_API_KEY
+  ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+  ENV NEXT_PUBLIC_API_KEY=$NEXT_PUBLIC_API_KEY
+  RUN npm run build
 
 FROM node:22-slim AS runtime
 WORKDIR /app

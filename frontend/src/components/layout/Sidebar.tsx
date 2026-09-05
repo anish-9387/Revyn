@@ -18,7 +18,7 @@ const STORAGE_KEY = "revyn_sidebar_collapsed";
 function Brand({ collapsed = false }: { collapsed?: boolean }) {
   return (
     <div className={`flex items-center gap-2.5 min-w-0 overflow-hidden ${collapsed ? "justify-center" : ""}`}>
-      {/* Logo image — fixed square so it never gets clipped */}
+      {/* Logo image - fixed square so it never gets clipped */}
       <span className="relative shrink-0 h-9 w-9">
         <Image
           src="/logo.png"
@@ -101,7 +101,7 @@ function NavList({
               {!collapsed && (
                 <span className="min-w-0 truncate leading-[1.35]">{item.label}</span>
               )}
-              {/* Approval badge — only when expanded */}
+              {/* Approval badge - only when expanded */}
               {!collapsed && item.path === "/approvals" && approvals > 0 ? (
                 <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-warning px-1.5 text-[11px] font-bold leading-none text-white shadow-soft">
                   {approvals > 99 ? "99+" : approvals}

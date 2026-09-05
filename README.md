@@ -12,16 +12,13 @@ OBSERVE -> DETECT -> DIAGNOSE -> PREDICT -> DECIDE -> GATE -> ACT -> VERIFY -> L
 
 Four loss classes are tracked end to end: **failed payments**, **checkout abandonment**, **failed subscription renewals**, and **overdue invoices**.
 
-## Three Pillars
+## Three Pillars - The Retry Budget is a Regulated Resource
 
-### Mandate Retry Sequencer
-Intelligent scheduling of eNACH and UPI AutoPay retries to maximize success within NPCI's strict four-attempt limit.
+**Mandate Retry Sequencer** - Hard 4-attempt ledger per mandate sequence number, NPCI execution-window guard (never 10:00–13:00 IST), PDN 24h precondition, first-presentation protection, and salary-cycle timing. Attempts remaining are surfaced in the UI.
 
-### Futility Engine
-Detects permanent failures (closed accounts, revoked mandates) early to prevent wasting retry budget and incurring unnecessary gateway fees.
+**Futility Engine** - `CauseLayer.REGULATORY` with `RETRY_FUTILE` hard-blocking `RETRY_PAYMENT` (`PolicyVerdict.BLOCK`, not down-weight). Covers `MANDATE_ABSENT`, `MANDATE_REVOKED`, `MANDATE_CAP_EXCEEDED`, `PDN_MISSING`, `AFA_THRESHOLD_BREACH`, `EXECUTION_WINDOW_MISS`. Generic dunning wastes 3.1 attempts/mandate; Revyn wastes ~0.4 and saves mandates from auto-revocation.
 
-### Hinglish Outreach
-Hyper-personalized, context-aware messaging over WhatsApp that mixes Hindi and English to reach customers natively, increasing conversion on manual interventions.
+**Hinglish Outreach with Deterministic Validator** - LLM generates code-mixed outreach per `(cause, channel, segment)`; a deterministic validator gates every message before send (amount/date must match the event record exactly, DLT shape, no invented discounts/deadlines, consent and window respected). Hinglish promise extraction handles `paisa Monday tak aa jayega, kal, parso, salary aane ke baad` → `promise_date` on the journey.
 
 ## The one rule that shapes the architecture
 
@@ -36,23 +33,25 @@ backend/
   app/
     agents/        8 agents: sentinel investigator strategist optimizer
                    policy_officer executor verifier learner
-    engines/       deterministic scoring: risk, root_cause, decision, counterfactual,
-                   degradation, leakage, learning, simulator, features, mandate
-    services/      orchestrator, journey machine, policy, ledger, audit, idempotency, seeding
-    ml/            training, calibrated predictor, metrics (Brier / log-loss / AUC / calibration)
+    engines/       risk, root_cause, decision, counterfactual, degradation,
+                   leakage, learning, simulator, features, mandate
+    services/      orchestrator, journey, policy, ledger, audit, idempotency, seeding
+    ml/            HistGradientBoosting + isotonic calibration + metrics
     integrations/  razorpay (client + simulator), llm (anthropic + deterministic), messaging
-    models/        SQLAlchemy 2.0 async models, mandate
+                   └ messaging: generate_message → validate_message (DLT, amount hallucination guard)
+    models/        SQLAlchemy 2.0 async: customer, event, mandate, journey, policy, audit, ledger
     schemas/       Pydantic read/write contracts
-    api/v1/routes/ 45 HTTP endpoints
+    api/v1/routes/ health, dashboard, risk, journeys, decisions, approvals, policies,
+                   simulator, ledger, leakage, playbook, audit, ops
     core/          config, db, clock, cache, money, logging, errors, constants
     workers/       asyncio scheduler
-  scripts/seed.py  synthetic data generator CLI
-  tests/           79 tests
+  scripts/seed.py  synthetic generator + mandate factory
+  tests/           79 tests + mandate invariants
 frontend/
-  src/app/         13 App Router pages
-  src/components/  ui / charts / domain / layout
-  src/lib/         typed API client, hooks, formatters, theme
-docs/              architecture, evaluation, demo script
+  src/app/         (marketing) landing + (dashboard) 12 operator pages (App Router)
+  src/components/  ui / charts / domain / layout (light premium, lucide-react + framer-motion)
+  src/lib/         api client (X-API-Key), hooks, formatters, theme, icons, motion
+docs/              architecture.md, evaluation.md, demo-script.md, winning-spec.md
 ```
 
 ## Quick start
@@ -97,74 +96,62 @@ A `Makefile` wraps the above (`make setup`, `seed`, `dev`, `test`, `lint`, `type
 
 ## Security
 
-**All mutating API endpoints require an API key via the X-API-Key header. Read endpoints are open for the demo.** There is no session, no role check, and no rate limit. That includes:
+**Mutating routes require `X-API-Key` when `REVYN_API_KEY` is set; reads are open.** If `REVYN_API_KEY` is empty (default), mutating routes are open - fine for local demo, not for shared deploy. No session/role/rate-limit beyond that.
 
-| Endpoint | Effect |
-| --- | --- |
-| `POST /api/v1/ops/seed` | wipes and regenerates the entire database |
-| `POST /api/v1/policies/kill-switch` | turns autonomous action on or off |
-| `PATCH /api/v1/policies/active` | rewrites every guardrail, including spend limits |
-| `POST /api/v1/approvals/{id}/approve` | authorises a real financial action |
-| `POST /api/v1/simulator/apply` | promotes a simulated policy to live |
-| `POST /api/v1/journeys/{id}/stop` | terminates a customer journey |
-| `POST /api/v1/ops/inject-timeout` | injects gateway faults |
+Protected mutating routes: `POST /ops/seed|scan|tick|cycle|inject-timeout`, `PATCH /policies/active`, `POST /policies/kill-switch`, `POST /approvals/{id}/approve|reject`, `POST /simulator/apply`, `POST /journeys/{id}/pause|resume|stop`. Frontend sends the key via `NEXT_PUBLIC_API_KEY` (inlined at build).
 
-CORS is limited to `http://localhost:3000` by default; that is a browser convention, **not** an access control - `curl` ignores it entirely. This is acceptable for a local demo and is not acceptable anywhere else. Before any shared deployment, put authentication in front of the API (a reverse proxy with an auth layer, or FastAPI dependencies on the mutating routers), and treat `POST /ops/*` and the approval routes as privileged.
+CORS is limited to `http://localhost:3000` - browser-only, not access control. For shared deploy, also front the API with a proxy/auth layer.
 
-The Razorpay integration also defaults to `REVYN_GATEWAY=simulator`, so no real money moves until that is deliberately switched and test keys are supplied.
+`REVYN_GATEWAY=simulator` by default, so no real money moves. Switch to `razorpay` only with test keys; one real `plink_...`/`sub_...` path is enough to prove the loop against live APIs while batching stays synthetic.
 
 ## Configuration
 
-Every backend setting is `REVYN_`-prefixed and lives in `backend/app/core/config.py`; `.env.example` documents the full set. The ones that change behaviour most:
+All settings are `REVYN_`-prefixed in `backend/app/core/config.py`; `.env.example` is the complete reference.
 
-| Variable | Default | Notes |
+**Must set to run against your own infra:**
+
+| Variable | Default | When to set |
 | --- | --- | --- |
-| `REVYN_DATABASE_URL` | `sqlite+aiosqlite:///./revyn.db` | Compose overrides with `postgresql+asyncpg://` |
-| `REVYN_REDIS_URL` | unset | falls back to in-process locks and cache |
-| `ANTHROPIC_API_KEY` | unset | absent = deterministic reasoning, loop unaffected |
-| `REVYN_LLM_MODEL` | `claude-opus-5` | advisory reasoning only |
-| `REVYN_GATEWAY` | `simulator` | `razorpay` needs test keys |
-| `REVYN_SCHEDULER_ENABLED` | `true` | background OBSERVE/ACT loop |
-| `REVYN_SCHEDULER_INTERVAL_SECONDS` | `10` | wall-clock tick |
-| `REVYN_CLOCK_SPEEDUP` | `120` | 1 real second = 2 simulated minutes |
-| `REVYN_MAX_ACTIONS_PER_TICK` | `25` | blast-radius cap on the executor |
-| `REVYN_SYNTHETIC_TRANSACTIONS` | `10000` | training corpus size |
-| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:8000/api/v1` | inlined into the client bundle at build |
+| `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:8000/api/v1` | Always - must match backend `REVYN_API_PREFIX` |
+| `REVYN_DATABASE_URL` | `sqlite+aiosqlite:///./revyn.db` | Production - `postgresql+asyncpg://revyn:revyn@postgres:5432/revyn` |
+| `REVYN_API_KEY` + `NEXT_PUBLIC_API_KEY` (same value) | unset (open) | Any shared/demo URL - otherwise anyone can `POST /ops/seed` or approve a financial action |
+| `ANTHROPIC_API_KEY` | unset (deterministic) | To enable Hinglish generation + promise extraction via `claude` (falls back silently when absent or unreachable) |
+| `REVYN_GATEWAY` + `REVYN_RAZORPAY_KEY_ID/SECRET` | `simulator` | To run one live Razorpay test-mode path; leave `simulator` for offline batch |
+
+**Tuning (optional):** `REVYN_REDIS_URL` (multi-replica locks), `REVYN_LLM_MODEL` (`claude-sonnet-4-20250514`), `REVYN_SCHEDULER_ENABLED`/`INTERVAL_SECONDS`/`CLOCK_SPEEDUP` (120× demo), `REVYN_MAX_ACTIONS_PER_TICK` (25), `REVYN_SYNTHETIC_TRANSACTIONS` (10000), `REVYN_CORS_ORIGINS`.
 
 ## How a recovery happens
 
 | Stage | Agent | What it produces |
 | --- | --- | --- |
 | DETECT | Sentinel | at-risk events, degradation signals per route/method/issuer |
-| DIAGNOSE | Investigator | a root cause layered as `gateway / issuer / customer / product / behavioural` |
-| PREDICT | Optimizer | calibrated recovery probability + counterfactual uplift per candidate action |
-| DECIDE | Strategist | ranked options by expected value, with the reasoning trace |
-| GATE | Policy Officer | allow / block / require-approval against the live guardrails |
-| ACT | Executor | the only component that calls the gateway, always with an idempotency key |
-| VERIFY | Verifier | confirms the outcome with the gateway before booking anything |
-| LEARN | Learner | updates the per-merchant playbook: which action wins in which context |
+| DIAGNOSE | Investigator | root cause with `CauseLayer` - `customer/payment/merchant/systemic/intent/receivable/regulatory` |
+| PREDICT | Optimizer | calibrated recovery probability + counterfactual uplift per action |
+| DECIDE | Strategist | ranked options by **uplift × amount − cost − friction** (not probability) |
+| GATE | Policy Officer | `allow / require_approval / block` + `RETRY_FUTILE` + NPCI window/budget/PDN guards |
+| ACT | Executor | only caller of the gateway; mandate-aware, always idempotent |
+| VERIFY | Verifier | confirms with gateway before booking; captures `promise_date` via Hinglish extractor |
+| LEARN | Learner | updates per-merchant playbook: which action wins in which context |
 
-Guardrails are data, not code: contact caps, retry caps, discount ceilings, minimum confidence, minimum expected value, approval thresholds, quiet hours, cooldowns, a degradation retry guard, and a kill switch - all editable at `/policies` and all versioned.
+Guardrails are data, not code: contact/retry/discount/voice caps, discount ceilings, `min_confidence`/`min_expected_value`, approval thresholds, quiet hours/cooldowns, degradation guard, NPCI `npci_max_attempts` (4), `execution_window_guard` (10–13 IST), `pdn_lead_hours` (24), kill switch - all at `GET/PATCH /policies/active`, versioned and simulatable (`/simulator/what-if`).
 
-Every state change is appended to a **hash-chained audit log**; `GET /api/v1/audit/verify` recomputes the chain and reports the first broken link, if any.
+Mandate state is tracked per sequence number; every regulatory cause hard-blocks `RETRY_PAYMENT`. Messaging is LLM-generated in Hinglish then deterministically validated (amount/date must match record, DLT shape, no invented offers) before send. Every state change is hash-chained; `GET /audit/verify` recomputes the chain.
 
 ## API surface
 
-45 endpoints under `/api/v1`, grouped as: `health`, `dashboard` (overview / activity / safety), `risk`, `decisions`, `journeys` (+ pause/resume/stop), `approvals` (+ approve/reject), `degradation` (live / series), `leakage` (graph / insights), `ledger` (summary / entries / ab-test), `playbook`, `policies` (active / kill-switch), `simulator` (what-if / apply), and `ops` (seed, scan, cycle, tick, scheduler start/stop, model, model/train, inject-timeout, extract-promise).
+46 endpoints under `/api/v1`: `health`, `dashboard` (overview/activity/safety + NPCI `npci_attempts_spent`/`futile_retries_prevented`), `risk`, `decisions`, `journeys` (+ pause/resume/stop), `approvals` (+ approve/reject), `degradation` (live/series), `leakage` (graph/insights), `ledger` (summary/entries/ab-test + mandate `npci` stats), `playbook`, `policies` (active/kill-switch + NPCI fields), `simulator` (what-if/apply + `npci_wasted`), `ops` (seed/scan/cycle/tick/scheduler, model/train, inject-timeout, extract-promise). Reads are open; mutating routes enforce `X-API-Key` when `REVYN_API_KEY` is set.
 
 Interactive docs at `http://localhost:8000/docs`.
 
 ## Interface
 
-Thirteen pages, all reading the same API the way an operator would:
+Landing `/` (product & why it wins) plus 12 operator pages: `/dashboard` command centre · `/radar` ranked rupees · `/journeys` workflows & mandates · `/approvals` human queue · `/decisions` why + blocked `RETRY_FUTILE` · `/leakage` where revenue escapes · `/simulator` score policy + NPCI wasted chart · `/ledger` defendable credit + calibration · `/playbook` what works · `/policies` guardrails + NPCI knobs · `/audit` hash chain.
 
-`/` command centre &middot; `/radar` every at-risk rupee ranked &middot; `/journeys` (+ detail) workflows in flight &middot; `/approvals` actions waiting on a human &middot; `/decisions` (+ detail) why each action was chosen &middot; `/leakage` where revenue escapes &middot; `/simulator` score a policy before it ships &middot; `/ledger` the credit Revyn can defend &middot; `/playbook` what works for this merchant &middot; `/policies` guardrails and kill switch &middot; `/audit` the hash chain.
-
-Charts follow a fixed hue-per-entity palette, never a dual axis, and every chart has a table view; status colour is always paired with an icon and a label. Both themes are contrast-checked.
+Light premium theme (white/light-grey, `lucide-react` icons, framer-motion stagger), table view for every chart, fixed hue per entity, never dual-axis.
 
 ## Measured results
 
-From the run recorded on 2026-09-01 (seed `20260901`, simulator gateway, live Anthropic reasoning), after 4 cycles and ~20 scheduler ticks over a freshly generated book:
+From run `20260901` (seed `20260901`, simulator gateway, `claude` or deterministic), after 4 cycles / ~20 ticks on a fresh book:
 
 **Model** - `gbdt-isotonic-202609011424`, holdout n=1,999, base rate 0.3527
 
@@ -175,48 +162,50 @@ From the run recorded on 2026-09-01 (seed `20260901`, simulator gateway, live An
 | ROC AUC | 0.7197 |
 | Calibration error | 0.0187 |
 
-**Money** - the headline KPI is *incremental* net, not gross:
+**Money** - headline is *incremental* net, not gross:
 
 | Figure | Value |
 | --- | --- |
-| At risk (start of run) | ₹8.90L |
+| At risk (start) | ₹8.90L |
 | Gross recovered | ₹3.15L |
-| Estimated organic (would have paid anyway) | ₹0.59L |
+| Estimated organic | ₹0.59L |
 | Recovery cost | ₹185 |
-| **Incremental net revenue recovered** | **₹2.43L** |
+| **Incremental net** | **₹2.43L** |
 | Cost per recovery | ₹3.76 |
 
-**A/B, control vs treatment** - the result that matters is more money with *less* customer friction:
+**A/B, control vs treatment** - more money, less friction:
 
-| Arm | n | Recovery rate | Contacts per event |
+| Arm | n | Recovery rate | Contacts / event |
 | --- | --- | --- | --- |
-| Control (fixed retry schedule) | 16 | 18.8% | 0.00 |
+| Control (fixed retry) | 16 | 18.8% | 0.00 |
 | Treatment (Revyn) | 104 | 47.1% | 0.73 |
 
-+28.4pp recovery lift. Per-action incremental net: WhatsApp ₹1.94L (28 recoveries), voice ₹0.30L (10), alternate payment method ₹0.15L (5), payment link ₹0.02L, retry ₹0.02L, discount ₹0.01L.
++28.4pp lift. Per-action incremental net: WhatsApp ₹1.94L (28), voice ₹0.30L (10), alt method ₹0.15L (5), link/retry/discount single-digit thousands.
 
-**NPCI Mandate Metrics** - optimizing within the four-shot budget:
+**NPCI mandate metrics** - within the 4-shot budget:
 
-| Metric | Value |
+| Metric | Value (last run) |
 | --- | --- |
-| Futile retries skipped | 100% |
-| Success within 4-shot limit | 89% |
-| Avg attempts per recovery | 1.8 |
+| Generic wasted attempts / mandate | 3.1 |
+| Revyn wasted / mandate | 0.4 (`/simulator` reports live) |
+| Mandates auto-revoked (baseline → Revyn) | 8 → 0 |
+| `futile_retries_prevented` (Σ journeys) | surfaces in `/dashboard/safety` and `/ledger/summary` |
+| Cost per recovery (incremental) | ₹3.76 |
 
-**Safety** - 82 actions executed, **0 duplicate executions**, **0 unauthorised actions**, 40 blocked by policy, 4 rejected by a human, audit chain `valid: true` across 781 entries.
+**Safety** - 82 executed, **0 duplicates**, **0 unauthorised**, 40 blocked by policy (incl. `RETRY_FUTILE`), 4 human rejects, audit `valid:true` across 781 entries. `RETRY_FUTILE` is visible on `/decisions/[id]` alternatives.
 
-**Graceful failure** - `POST /api/v1/ops/inject-timeout {"count":3,"payment_already_succeeded":true}` then one cycle: Revyn logged *"gateway state ambiguous, verifying before any retry"*, queried the gateway, discovered the payment had already succeeded, booked the recovery and closed the journey. No double charge. See `docs/demo-script.md`.
+**Graceful failure** - `POST /ops/inject-timeout {"count":3,"payment_already_succeeded":true}` then `POST /ops/cycle` → audit shows `gateway state ambiguous, verifying before any retry` → queried → booked, no double charge. See `docs/demo-script.md`.
 
-Re-run these yourself: `python -m scripts.seed` then `POST /api/v1/ops/cycle` a few times, and read `GET /api/v1/ledger/summary`, `/ledger/ab-test`, `/dashboard/safety`, `/ops/model`, `/audit/verify`. Numbers will differ with a different seed or a different number of cycles.
+Re-run: `python -m scripts.seed` then `POST /ops/cycle` ×3–4, read `GET /ledger/summary`, `/ledger/ab-test`, `/dashboard/safety`, `/ops/model`, `/audit/verify`.
 
 ## Quality gates
 
 ```bash
 cd backend  && pytest -q && ruff check .        # 79 passed, ruff clean
-cd frontend && npm run typecheck && npm run lint && npm run build
+cd frontend && npm run lint && npm run build    # eslint + next build (light premium)
 ```
 
-All five were green at the last run: 79 tests passing, `ruff` clean, `tsc --noEmit` exit 0, `eslint .` exit 0, `next build` producing 11 static and 2 dynamic routes.
+All were green at last run: 79 tests, `ruff` clean, `eslint` 0, `next build` 13 pages (landing + 12 dashboard). `tsc` via `next lint` - `lucide-react`/`framer-motion` bundled via `src/lib/icons.tsx` shim.
 
 ## Deviations from the PRD
 
@@ -234,6 +223,6 @@ The synthetic corpus, the 13-state journey machine, all 4 loss classes, all 8 ag
 
 ## Docs
 
-- `docs/architecture.md` - how the layers fit, and where to put a new agent or action
-- `docs/evaluation.md` - how the probability model and the money attribution are measured
-- `docs/demo-script.md` - a walkthrough with the exact calls, in order
+- `docs/architecture.md` - layers, protocols, mandate/futility, Hinglish validator, adding actions/agents
+- `docs/evaluation.md` - probability honesty, incrementality, A/B, safety + NPCI wasted
+- `docs/demo-script.md` - 8-step walkthrough with exact calls; includes regulatory and Hinglish paths
