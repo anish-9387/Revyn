@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -16,17 +17,21 @@ const STORAGE_KEY = "revyn_sidebar_collapsed";
 
 function Brand({ collapsed = false }: { collapsed?: boolean }) {
   return (
-    <div className={`flex items-center gap-2.5 min-w-0 ${collapsed ? "justify-center" : ""}`}>
-      <span
-        aria-hidden
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-[16px] font-bold text-white shadow-soft"
-        style={{ background: "linear-gradient(135deg, #2563EB 0%, #06B6D4 55%, #7C3AED 100%)" }}
-      >
-        R
+    <div className={`flex items-center gap-2.5 min-w-0 overflow-hidden ${collapsed ? "justify-center" : ""}`}>
+      {/* Logo image — fixed square so it never gets clipped */}
+      <span className="relative shrink-0 h-9 w-9">
+        <Image
+          src="/logo.png"
+          alt="Revyn logo"
+          fill
+          className="object-contain rounded-xl"
+          priority
+        />
       </span>
+      {/* Text only when expanded */}
       {!collapsed && (
-        <span className="min-w-0">
-          <span className="block text-[15px] font-semibold tracking-tight text-ink leading-none">Revyn</span>
+        <span className="min-w-0 overflow-hidden">
+          <span className="block text-[15px] font-semibold tracking-tight text-ink leading-none truncate">Revyn</span>
           <span className="block truncate text-[11px] tracking-wide text-muted">Revenue recovery</span>
         </span>
       )}
@@ -38,19 +43,19 @@ function NavIcon({ name, active }: { name: string; active: boolean }) {
   const cls = `h-[15px] w-[15px] shrink-0 ${active ? "text-blue-600" : "text-slate-400"}`;
   const props = { className: cls, size: 15 } as const;
   switch (name) {
-    case "grid": return <LayoutGrid {...props} />;
-    case "radar": return <Radar {...props} />;
-    case "route": return <Route {...props} />;
-    case "shield": return <ShieldCheck {...props} />;
-    case "layers": return <Layers {...props} />;
-    case "chart": return <BarChart3 {...props} />;
-    case "flask": return <FlaskConical {...props} />;
-    case "coins": return <Coins {...props} />;
-    case "book": return <BookOpen {...props} />;
+    case "grid":    return <LayoutGrid {...props} />;
+    case "radar":   return <Radar {...props} />;
+    case "route":   return <Route {...props} />;
+    case "shield":  return <ShieldCheck {...props} />;
+    case "layers":  return <Layers {...props} />;
+    case "chart":   return <BarChart3 {...props} />;
+    case "flask":   return <FlaskConical {...props} />;
+    case "coins":   return <Coins {...props} />;
+    case "book":    return <BookOpen {...props} />;
     case "sliders": return <SlidersHorizontal {...props} />;
-    case "scroll": return <ScrollText {...props} />;
-    case "sparkles": return <Sparkles {...props} />;
-    default: return <span className={cls} aria-hidden>•</span>;
+    case "scroll":  return <ScrollText {...props} />;
+    case "sparkles":return <Sparkles {...props} />;
+    default:        return <span className={cls} aria-hidden>•</span>;
   }
 }
 
@@ -65,28 +70,38 @@ function NavList({
 }) {
   const pathname = usePathname();
   return (
-    <ul className="flex-1 space-y-0.5 overflow-y-auto py-1 pr-1">
+    <ul className="flex-1 space-y-0.5 overflow-y-auto py-1">
       {NAV.map((item) => {
         const active = pathname === item.path || (item.path !== "/" && pathname.startsWith(item.path));
         return (
           <li key={item.path}>
             <Link
               href={item.path}
-              title={collapsed ? item.label : item.hint}
+              title={item.hint}
               onClick={onNavigate}
               aria-current={active ? "page" : undefined}
-              className={`group relative flex items-center gap-2.5 rounded-xl px-2.5 py-[8px] text-[13px] leading-none transition-all ${collapsed ? "justify-center" : ""} ${
+              className={`group relative flex items-center gap-2.5 rounded-xl text-[13px] transition-all ${
+                collapsed
+                  ? "justify-center px-0 py-2.5"
+                  : "px-2.5 py-2"
+              } ${
                 active
                   ? "bg-[color-mix(in_oklab,var(--series-1)_10%,var(--raised))] font-medium text-ink shadow-soft"
                   : "text-ink-2 hover:bg-raised hover:text-ink"
               }`}
             >
+              {/* Active indicator bar */}
               <span
                 aria-hidden
-                className={`absolute top-1/2 left-0 h-6 w-[3px] -translate-y-1/2 rounded-full bg-series-1 transition-all ${active ? "opacity-100" : "opacity-0 group-hover:opacity-30"}`}
+                className={`absolute top-1/2 left-0 h-6 w-[3px] -translate-y-1/2 rounded-full bg-series-1 transition-all ${
+                  active ? "opacity-100" : "opacity-0 group-hover:opacity-30"
+                }`}
               />
               <NavIcon name={(item as { icon: string }).icon} active={active} />
-              {!collapsed && <span className="min-w-0 truncate">{item.label}</span>}
+              {!collapsed && (
+                <span className="min-w-0 truncate leading-[1.35]">{item.label}</span>
+              )}
+              {/* Approval badge — only when expanded */}
               {!collapsed && item.path === "/approvals" && approvals > 0 ? (
                 <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-warning px-1.5 text-[11px] font-bold leading-none text-white shadow-soft">
                   {approvals > 99 ? "99+" : approvals}
@@ -144,27 +159,42 @@ export function Sidebar({
       {/* ── Desktop sidebar ─────────────────────────────── */}
       <nav
         aria-label="Sections"
-        className={`hidden lg:flex lg:h-dvh lg:shrink-0 lg:flex-col lg:border-r lg:border-hairline lg:bg-surface/70 lg:backdrop-blur-xl lg:px-3 lg:py-4 sidebar-transition overflow-hidden ${
-          collapsed ? "lg:w-[3.75rem]" : "lg:w-[16rem]"
+        className={`hidden lg:flex lg:h-dvh lg:shrink-0 lg:flex-col lg:border-r lg:border-hairline lg:bg-surface/70 lg:backdrop-blur-xl lg:py-4 sidebar-transition overflow-hidden ${
+          collapsed ? "lg:w-[4rem] lg:px-2" : "lg:w-[16rem] lg:px-3"
         }`}
       >
-        {/* Brand + collapse toggle */}
-        <div className={`flex items-center pb-3.5 ${collapsed ? "justify-center px-1" : "px-2 justify-between"}`}>
-          <Brand collapsed={collapsed} />
+        {/* Brand row + collapse toggle */}
+        <div
+          className={`flex items-center pb-3.5 gap-2 ${
+            collapsed ? "justify-center flex-col" : "justify-between px-1"
+          }`}
+        >
+          {/* When expanded: logo+name on left, toggle on right */}
+          {!collapsed && <Brand collapsed={false} />}
+
           <button
             type="button"
             onClick={toggle}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="hidden lg:grid h-7 w-7 place-items-center rounded-lg text-muted hover:bg-raised hover:text-ink transition-all ml-1 shrink-0"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-muted hover:bg-raised hover:text-ink transition-all"
           >
             {collapsed ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
           </button>
+
+          {/* When collapsed: logo below the toggle */}
+          {collapsed && (
+            <div className="relative h-8 w-8">
+              <Image src="/logo.png" alt="Revyn" fill className="object-contain rounded-lg" />
+            </div>
+          )}
         </div>
+
         <div className="mb-2 h-px bg-hairline/60" />
         <NavList approvals={approvals} collapsed={collapsed} />
+
         {!collapsed && (
-          <div className="mt-auto border-t border-hairline/60 pt-3">
+          <div className="mt-auto border-t border-hairline/60 pt-3 px-1">
             <div className="rounded-xl bg-raised px-3 py-2.5">
               <p className="text-[11px] font-semibold tracking-wide text-ink">Need help?</p>
               <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-muted">

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Button, IconButton } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Menu } from "@/lib/icons";
@@ -41,6 +42,10 @@ export function TopBar({
         <IconButton label="Open navigation" onClick={onOpenNav} className="lg:hidden rounded-xl">
           <Menu size={16} />
         </IconButton>
+        {/* Logo visible on mobile where sidebar is hidden */}
+        <div className="relative h-7 w-7 shrink-0 lg:hidden">
+          <Image src="/logo.png" alt="Revyn" fill className="object-contain rounded-lg" />
+        </div>
         <div className="flex min-w-0 items-center gap-4 sm:gap-7">
           <Kpi label="At risk now" short="At risk" value={overview ? inr(overview.revenue_at_risk_paise) : "-"} />
           <span aria-hidden className="hidden h-8 w-px bg-hairline sm:block" />

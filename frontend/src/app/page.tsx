@@ -1,9 +1,10 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import {
-  Activity, AlertTriangle, ArrowRight, ArrowUpRight, BarChart3,
-  Check, Coins, Globe, Layers, ScrollText, ShieldCheck, Sparkles,
-  Timer, TrendingUp, Wallet, X, Zap,
+  AlertTriangle, ArrowRight, ArrowUpRight, BarChart3,
+  Check, Globe, Layers, ScrollText, ShieldCheck, Sparkles,
+  Timer, TrendingUp, X, Zap,
 } from "@/lib/icons";
 import { MotionDiv, MotionFade } from "@/lib/motion";
 
@@ -15,7 +16,9 @@ export default function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-black/8 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5 sm:px-8">
           <div className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-xl text-sm font-bold text-white shadow" style={{ background: "linear-gradient(135deg,#2563eb 0%,#06b6d4 55%,#7c3aed 100%)" }}>R</span>
+            <div className="relative h-8 w-8 shrink-0">
+              <Image src="/logo.png" alt="Revyn logo" fill className="object-contain rounded-lg" priority />
+            </div>
             <span className="text-[15px] font-bold tracking-tight text-black">Revyn</span>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-xs font-bold tracking-[0.12em] uppercase text-black/60">
@@ -348,7 +351,9 @@ export default function LandingPage() {
       <footer className="border-t border-slate-200 bg-white px-6 py-8 text-center sm:px-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 sm:flex-row sm:justify-between">
           <div className="flex items-center gap-2">
-            <span className="grid h-6 w-6 place-items-center rounded-lg text-[11px] font-bold text-white" style={{ background: "linear-gradient(135deg,#2563eb 0%,#06b6d4 55%,#7c3aed 100%)" }}>R</span>
+            <div className="relative h-6 w-6 shrink-0">
+              <Image src="/logo.png" alt="Revyn" fill className="object-contain rounded-md" />
+            </div>
             <span className="text-xs font-semibold text-slate-700">Revyn</span>
           </div>
           <p className="text-xs text-slate-400">© 2026 Revyn · Revenue recovery, supervised.</p>

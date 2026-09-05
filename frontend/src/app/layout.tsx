@@ -5,7 +5,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Revyn - Autonomous Revenue Recovery",
   description:
-    "Agentic revenue recovery: detects failed payments, abandoned checkouts, failed subscriptions and overdue invoices, then recovers them under merchant guardrails."
+    "Agentic revenue recovery: detects failed payments, abandoned checkouts, failed subscriptions and overdue invoices, then recovers them under merchant guardrails.",
+  icons: {
+    icon: [
+      { url: "/logo.png", type: "image/png" },
+    ],
+    apple: "/logo.png",
+  },
 };
 
 export const viewport: Viewport = {
