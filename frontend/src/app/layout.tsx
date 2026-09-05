@@ -5,8 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Revyn - Autonomous Revenue Recovery",
   description:
-    "Agentic rev-nue recovery: detects failed payments, abandoned checkouts, failed subscriptions and overdue invoices, then recovers them under merchant guardrails.",
-    "Agentic revenue recovery: detects failed payments, abandoned checkouts, failed subscriptions and overdue invoices, then recovers them under merchant guardrails.",
+    "Agentic revenue recovery: detects failed payments, abandoned checkouts, failed subscriptions and overdue invoices, then recovers them under merchant guardrails."
 };
 
 export const viewport: Viewport = {
@@ -25,7 +24,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
       </head>
-      <body>{children}</body>
       <body suppressHydrationWarning>{children}</body>
     </html>
   );

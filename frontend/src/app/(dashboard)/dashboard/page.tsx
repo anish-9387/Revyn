@@ -79,7 +79,6 @@ export default function CommandCentre() {
         <StatTile
           label="Customer touches spent"
           value={compact(overview.customer_contacts)}
-          sub={`${ab.treatment.contacts_per_event.toFixed(2)} per managed event · ${compact(overview.pending_approvals)} awaiting approval`}
           sub={`${ab?.treatment?.contacts_per_event?.toFixed(2) ?? "0.00"} per managed event · ${compact(overview.pending_approvals)} awaiting approval`}
         />
       </StatRow>

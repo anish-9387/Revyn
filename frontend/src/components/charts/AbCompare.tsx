@@ -54,7 +54,6 @@ function PairedBars({
   );
 }
 
-export function AbCompare({ test }: { test: AbTest }) {
 export function AbCompare({ test }: { test?: AbTest }) {
   if (!test || !test.control || !test.treatment) return null;
   const { control, treatment } = test;
