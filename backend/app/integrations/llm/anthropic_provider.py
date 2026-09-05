@@ -101,7 +101,7 @@ class AnthropicReasoner:
                 log.info("llm.fallback_unsupported", extra={"error": str(exc)[:200]})
                 self._fallback_supported = False
                 return await self._structured(system=system, payload=payload, response_format=response_format, model_cls=model_cls, instruction=instruction)
-            # Connection errors are expected when no valid API key / no internet — fall back silently to deterministic
+            # Connection errors are expected when no valid API key / no internet - fall back silently to deterministic
             if "connection" in str(exc).lower():
                 log.info("llm.unreachable_fallback_deterministic", extra={"error": str(exc)[:200]})
             else:

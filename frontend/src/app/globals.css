@@ -224,6 +224,7 @@
 }
 @utility num { font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; letter-spacing:-0.02em; }
 @utility focus-ring { &:focus-visible{ outline:2px solid var(--series-1); outline-offset:2px; box-shadow:0 0 0 4px var(--ring); } }
+@utility sidebar-transition { transition: width 0.28s cubic-bezier(0.16,1,0.3,1), min-width 0.28s cubic-bezier(0.16,1,0.3,1); }
 
 .viz-tooltip{
   background: var(--surface);

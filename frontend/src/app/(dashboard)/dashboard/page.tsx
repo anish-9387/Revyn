@@ -160,7 +160,7 @@ export default function CommandCentre() {
         <DataTable
           rows={overview.top_opportunities}
           rowKey={(row) => row.event_id}
-          empty="Nothing at risk. Seed the demo data from the ops endpoint."
+          empty="Nothing at risk right now."
           columns={[
             {
               key: "ref",

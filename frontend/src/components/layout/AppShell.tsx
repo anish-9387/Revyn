@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="min-w-0 flex-1 lg:h-dvh lg:overflow-y-auto lg:overflow-x-hidden">
           <TopBar overview={overview.data} automationEnabled={policy.data ? policy.data.automation_enabled && !policy.data.paused : true} busy={pending} onCycle={cycle} onKillSwitch={killSwitch} onOpenNav={() => setNavOpen(true)} />
           <main className="stagger mx-auto max-w-[1560px] space-y-4 px-4 py-4 sm:space-y-5 sm:px-5 sm:py-5 lg:px-7 lg:py-6">
-            {overview.error ? <ErrorNote message={`Backend unreachable - ${overview.error}. Start it with: uvicorn app.main:app --reload`} onRetry={() => void refresh()} /> : null}
+            {overview.error ? <ErrorNote message="Backend unreachable. Make sure the API server is running." onRetry={() => void refresh()} /> : null}
             {error ? <ErrorNote message={error} /> : null}
             {children}
           </main>

@@ -2,9 +2,11 @@
 
 import { Button, IconButton } from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { Activity, Menu } from "@/lib/icons";
+import { Menu } from "@/lib/icons";
 import { inr } from "@/lib/format";
 import type { Overview } from "@/lib/types";
+
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 function Kpi({ label, short, value, tone }: { label: string; short: string; value: string; tone?: string }) {
   return (
@@ -43,17 +45,19 @@ export function TopBar({
           <Kpi label="At risk now" short="At risk" value={overview ? inr(overview.revenue_at_risk_paise) : "-"} />
           <span aria-hidden className="hidden h-8 w-px bg-hairline sm:block" />
           <Kpi label="Incremental net" short="Net back" value={overview ? inr(overview.incremental_net_paise) : "-"} tone="text-delta-up" />
-          <span className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-emerald-700 ring-1 ring-emerald-200 sm:inline-flex">
-            <Activity size={12} className="text-emerald-600" /> LIVE
-          </span>
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <Button variant="ghost" size="sm" loading={busy === "cycle"} onClick={onCycle} className="hidden sm:inline-flex">
-            Run cycle
-          </Button>
-          <Button variant="ghost" size="sm" loading={busy === "cycle"} onClick={onCycle} className="sm:hidden rounded-xl">
-            Cycle
-          </Button>
+          {/* "Run cycle" only visible in explicit demo mode */}
+          {DEMO_MODE && (
+            <>
+              <Button variant="ghost" size="sm" loading={busy === "cycle"} onClick={onCycle} className="hidden sm:inline-flex">
+                Force tick
+              </Button>
+              <Button variant="ghost" size="sm" loading={busy === "cycle"} onClick={onCycle} className="sm:hidden rounded-xl">
+                Tick
+              </Button>
+            </>
+          )}
           <Button
             variant={automationEnabled ? "danger" : "primary"}
             size="sm"
